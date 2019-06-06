@@ -1,5 +1,5 @@
 '''
-256 Pipeline tools
+256 Pipeline tools.
 EVE - Houdini pipeline for VFX production
 
 Create folder structure for the project and copy pipeline files into it
