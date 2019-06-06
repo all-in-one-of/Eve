@@ -64,7 +64,7 @@ os.environ['JOB'] = root3D
 # Houdini digital assets folder including sub folders
 os.environ['HOUDINI_OTLSCAN_PATH'] = getHDA()
 # Houdini path
-os.environ['HOUDINI_PATH'] = '{}/PREP/PIPELINE/houdini;&'.format(rootProject)
+os.environ['HOUDINI_PATH'] = '{}/PREP/PIPELINE/settings;&'.format(rootProject)
 # Path to custom python tools
 os.environ['PYTHONPATH'] = '{0}/dna;{0}/tools;&'.format(rootPipeline)
 

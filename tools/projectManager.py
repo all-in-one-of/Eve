@@ -7,7 +7,6 @@ Create folder structure for the project and copy pipeline files into it
 
 # Common modules import
 import os
-import sys
 import shutil
 import webbrowser
 
@@ -112,7 +111,7 @@ class Warning(QWidget):
 
         self.parent = parent
         self.lab_warning = self.window.findChild(QLabel, 'lab_warning')
-        self.lab_warning.setText('Folder <{0}> exists!'.format(message))
+        self.lab_warning.setText('Project {0} exists!'.format(message))
         self.btn_proceed = self.window.findChild(QPushButton, 'btn_proceed')
         self.btn_cancel = self.window.findChild(QPushButton, 'btn_cancel')
 
@@ -285,10 +284,10 @@ class ProjectManager(QWidget):
         launcherBAT_DST.close()
 
         # Create genes
-
+        self.copyTree('{}/src/genes'.format(rootPipeline), '{}/PREP/PIPELINE/genes'.format(projectRoot))
 
         # Copy Houdini prefs
-        self.copyTree('{}/src/houdini'.format(rootPipeline), '{}/PREP/PIPELINE/houdini'.format(projectRoot))
+        self.copyTree('{}/src/settings'.format(rootPipeline), '{}/PREP/PIPELINE/settings'.format(projectRoot))
 
         print '>> Folder structure with pipeline files created in {0}/'.format(projectRoot)
 

@@ -40,90 +40,24 @@ resolution_LR = (1280, 540)
 # PATHS
 # Documentation paths
 DOCS = 'https://github.com/kiryha/Eve/wiki/'
-# Get Eve pipeline root folder <P:/Eve>
+# Get Eve pipeline root folder <X:/Eve>
 rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/')
-
 # Get project root folder, defined in runHoudini.py  <P:/PROJECTS/NSI/>
 rootProject = os.environ['ROOT']
 # Get root for Houdini project ($JOB variable), defined in runHoudini.py <P:/PROJECTS/NSI/PROD/3D>
 root3D = os.environ['JOB']
 
-# Get path to *.UI files <P:/PROJECTS/NSI/PREP/PIPELINE/EVE/ui/ui>
-folderUI = '{0}/{1}/ui/ui'.format(rootPipeline, pipelineName)
+# Get path to *.UI files <X:/Eve/ui>
+folderUI = '{0}/ui'.format(rootPipeline)
 
 # Database files
+'''
+REMOVE FROM DNA
 genesFile_project = '{0}/EVE/genes/project.json'.format(rootPipeline)
 genes_project = json.load(open(genesFile_project))
 genesFile_render = '{0}/EVE/genes/render.json'.format(rootPipeline)
 #genes_render = json.load(open(genesFile_render))
-
-
-# PROJECT FOLDER STRUCTURE
-# Shots structure
-SHOTS = [
-    ['010',[
-        ['SHOT_010', []],
-        ['SHOT_020', []]
-    ]]
-        ]
-# Assets structure
-ASSETS = [
-    ['CHARACTERS', []],
-    ['ENVIRONMENTS', []],
-    ['PROPS', []],
-    ['STATIC', []]
-        ]
-# Types structure
-TYPES = [
-    ['ASSETS', ASSETS],
-    ['SHOTS', SHOTS]
-    ]
-# Formats structure
-FORMATS = [
-    ['ABC', []],
-    ['GEO', []],
-    ['FBX', []]
-    ]
-# Folders structure
-FOLDERS = [
-    ['EDIT', [
-        ['OUT', []],
-        ['PROJECT', []]
-    ]],
-    ['PREP', [
-        ['ART', []],
-        ['SRC', []],
-        ['PIPELINE', []],
-        ]],
-    ['PROD', [
-        ['2D', [
-            ['COMP', SHOTS],
-            ['RENDER', SHOTS]
-        ]],
-        ['3D', [
-            ['lib', [
-                ['ANIMATION', []],
-                ['MATERIALS', ASSETS] # Or TYPES ?
-            ]],
-            ['fx',TYPES],
-            ['caches',TYPES],
-            ['hda', [
-                ['ASSETS', ASSETS],
-                ['FX', TYPES],
-             ]],
-            ['render', SHOTS],
-            ['scenes', [
-                ['ASSETS', ASSETS],
-                ['ANIMATION', SHOTS],
-                ['FX', TYPES],
-                ['LAYOUT', SHOTS],
-                ['LOOKDEV', TYPES],
-                ['RENDER', SHOTS]
-            ]],
-            ['textures', TYPES],
-        ]],
-    ]]
-    ]
+'''
 
 # FILE NAMES AND PATHS PATTERNS
 fileNameSequence =  'E{0}_S{1}_{2}.$F.{3}'                                 # Output sequence (flipbook, mantra, cache)

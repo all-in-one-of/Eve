@@ -34,4 +34,4 @@ Install [Github Desktop](https://electronjs.org/apps/github-desktop) and clone t
 where you supposing to keep Eve pipeline.
 
 ## Usage
-Go to Eve local folder on your HDD and run cre
+Go to Eve local folder on your HDD and run Project Manager tool with projectManager.bat
