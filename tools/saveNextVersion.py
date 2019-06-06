@@ -17,7 +17,6 @@ class SNV(QtWidgets.QWidget):
         super(SNV, self).__init__()
         ui_file = '{}/saveNextVersion_warning.ui'.format(dna.folderUI)
         self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
-        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         # Setup window properties
         mainLayout = QtWidgets.QVBoxLayout()
@@ -26,6 +25,7 @@ class SNV(QtWidgets.QWidget):
         self.setLayout(mainLayout)
         # self.resize(320, 120)  # resize window
         self.setWindowTitle('Save Next Version')  # Title Main window
+        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         # Setup label
         message = 'File exists!\n{}'.format(dna.analyzeFliePath(filePath)['fileName'])

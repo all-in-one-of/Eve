@@ -51,8 +51,9 @@ root3D = os.environ['JOB']
 folderUI = '{0}/ui'.format(rootPipeline)
 
 # Database files
+# TBD: REMOVE FROM DNA AND EXPLICITLY PASS AS AGRS
 '''
-REMOVE FROM DNA
+TBD: REMOVE FROM DNA AND EXPLICITLY PASS AS AGRS
 genesFile_project = '{0}/EVE/genes/project.json'.format(rootPipeline)
 genes_project = json.load(open(genesFile_project))
 genesFile_render = '{0}/EVE/genes/render.json'.format(rootPipeline)
