@@ -7,15 +7,13 @@ Create folder structure for the project and copy pipeline files into it
 
 # Common modules import
 import os
+import sys
 import shutil
 import webbrowser
 
-# UI import
-#from ui import createProject_Main
-#from ui import createProject_Warning
-
 # DNA import
-from dna import dna
+sys.path.append('P:/Eve/')
+import dna.dna as dna
 
 # Py Side import
 from PySide.QtGui import *
@@ -26,6 +24,8 @@ from PySide import QtUiTools, QtCore
 filterFolders = ['.dev', '.git', '.idea', 'hips']
 # File names to skip when run copyTree
 filterFiles = ['createProject.py', 'createProject.bat', 'README.md']
+uiFile_main = 'P:/Eve/ui/createProject_main.ui'
+uiFile_warning = 'P:/Eve/ui/createProject_warning.ui'
 
 # WARNING WINDOW
 class Warning(QWidget):
@@ -38,15 +38,22 @@ class Warning(QWidget):
         super(Warning, self).__init__()
 
         # SETUP UI
-        self.setupUi(self)
+        ui_file = QtCore.QFile(uiFile_warning)
+        ui_file.open(QtCore.QFile.ReadOnly)
+        self.window = QtUiTools.QUiLoader().load(ui_file)
+        ui_file.close()
+
         self.parent = parent
+        self.lab_warning = self.window.findChild(QLabel, 'lab_warning')
         self.lab_warning.setText('Folder <{0}> exists!'.format(message))
+        self.btn_proceed = self.window.findChild(QPushButton, 'btn_proceed')
+        self.btn_cancel = self.window.findChild(QPushButton, 'btn_cancel')
 
         # SETUP FUNCTIONALITY
         self.btn_proceed.clicked.connect(self.proceed)
-        self.btn_proceed.clicked.connect(self.close)
+        self.btn_proceed.clicked.connect(self.window.close)
         self.btn_cancel.clicked.connect(self.cancel)
-        self.btn_cancel.clicked.connect(self.close)
+        self.btn_cancel.clicked.connect(self.window.close)
 
     def proceed(self):
         # PROCEED button
@@ -69,35 +76,35 @@ class CreateProject(QWidget):
 
     def __init__(self):
         super(CreateProject, self).__init__()
-
-        uiFile = 'P:/Eve/ui/create_project_main.ui'
-        ui_file = QtCore.QFile(uiFile)
+        # SETUP UI
+        ui_file = QtCore.QFile(uiFile_main)
         ui_file.open(QtCore.QFile.ReadOnly)
         self.window = QtUiTools.QUiLoader().load(ui_file)
         ui_file.close()
 
-        btn_create = self.window.findChild(QPushButton, 'btn_create')
-        btn_create.clicked.connect(lambda:  self.help(dna.DOCS))
+        self.act_docs = self.window.findChild(QAction, 'act_docs')
+        self.act_help = self.window.findChild(QAction, 'act_help')
+        self.btn_setFolder = self.window.findChild(QPushButton, 'btn_setFolder')
+        self.lin_name = self.window.findChild(QLineEdit, 'lin_name')
+        self.lab_path = self.window.findChild(QLabel, 'lab_path')
+        self.btn_create = self.window.findChild(QPushButton, 'btn_create')
 
-        # SETUP UI
-        #self.setupUi(self)
-        #self.setFocus()  # Set active widget Main window
 
-        #self.lab_path.setText('C:')
-        #self.lin_name.setText('MY_PROJECT')
+        self.lab_path.setText('C:')
+        self.lin_name.setText('MY_PROJECT')
 
         # SETUP COMMON VARIABLES
         self.projectFolder = None # Project location
         self.projectName = None # Project name
 
         # SETUP FUNCTIONALITY
-        #self.act_docs.triggered.connect(lambda:  self.help(dna.DOCS))
-        #self.act_help.triggered.connect(lambda:  self.help('{0}Tools#create-project'.format(dna.DOCS)))
-        #self.btn_create.clicked.connect(self.createProject)
-        #self.btn_setFolder.clicked.connect(self.selectProjectFolder)
+        self.act_docs.triggered.connect(lambda:  self.help(dna.DOCS))
+        self.act_help.triggered.connect(lambda:  self.help('{0}Tools#create-project'.format(dna.DOCS)))
+        self.btn_create.clicked.connect(self.createProject)
+        self.btn_setFolder.clicked.connect(self.selectProjectFolder)
 
-        #self.lin_name.textChanged.connect(self.updateProjectPath)
-        #self.buildProjectPath()
+        self.lin_name.textChanged.connect(self.updateProjectPath)
+        self.buildProjectPath()
 
     def help(self, URL):
         '''
@@ -172,20 +179,43 @@ class CreateProject(QWidget):
 
     def createProject_HDD(self, projectRoot):
         '''
-        Create project on HDD in project root folder and copy pipeline files
+        Create project on HDD and copy/create pipeline files:
+            - Houdini launcher
+            - database (genes)
+            - houdini settings
         :return:
         '''
 
         # Create nested folder structure
         self.createFolders(projectRoot, dna.FOLDERS)
-        # Copy PIPELINE
-        rootPipeline_NEW = '{}/PREP/PIPELINE'.format(projectRoot)
-        self.copyTree(dna.rootPipeline, rootPipeline_NEW)
+
+        # Create Houdini launcher
+        launcherNamePY_SRC = '{}/src/runHoudini.py'.format(dna.rootPipeline)
+        launcherNamePY_DST = '{}/PREP/PIPELINE/runHoudini.py'.format(projectRoot)
+        launcherNameBAT_DST = '{}/PREP/PIPELINE/runHoudini.bat'.format(projectRoot)
+
+        launcherPY_SRC = open(launcherNamePY_SRC, 'r')
+        launcherPY_DST = open(launcherNamePY_DST, 'w')
+        launcherBAT_DST = open(launcherNameBAT_DST, 'w')
+
+        # PY
+        for line in launcherPY_SRC:
+            # Edit per project variables
+            if line.startswith('rootPipeline ='):
+                line = 'rootPipeline = "{}"\n'.format(dna.rootPipeline)
+            launcherPY_DST.write(line)
+
+        # BAT
+        launcherBAT_DST.write('"C:\Python27\python.exe" %cd%\\runHoudini.py')
+
+        launcherPY_SRC.close()
+        launcherPY_DST.close()
+        launcherBAT_DST.close()
+
+        # Copy Houdini prefs
+        self.copyTree('{}/src/houdini'.format(dna.rootPipeline), '{}/PREP/PIPELINE/houdini'.format(projectRoot))
 
         print '>> Folder structure with pipeline files created in {0}/'.format(projectRoot)
-
-    def createProject_SG(self, projectName):
-        print '>> Project {0} created in Shotgun.'.format(projectName)
 
     def createProject(self, catchWarning = None):
         '''
@@ -207,7 +237,7 @@ class CreateProject(QWidget):
             if catchWarning == None:
                 # Run warning dialog
                 self.warning = Warning(self, projectRoot)  # Run SNV window
-                win = self.warning.show()
+                win = self.warning.window.show()
 
                 if not win:  # Prevent script to run further before user reply in warning UI
                     return
@@ -222,14 +252,9 @@ class CreateProject(QWidget):
             self.createFolder(projectRoot)
             self.createProject_HDD(projectRoot)
 
-        # SHOTGUN
-        # Create project in Shotgun
-        if self.chb_skipSG.isChecked() != True:
-            self.createProject_SG(projectName)
-
         # Report about creation
         print '>> Project creation complete!'
-        print '>> Run Houdini with {0}/PREP/PIPELINE/runHoudini.bat and create some magic!'.format(projectRoot)
+        print '>> Run Houdini with {0}/PREP/PIPELINE/runHoudini.bat and create a magic!'.format(projectRoot)
 
 # Run Create Project script
 app = QApplication([])

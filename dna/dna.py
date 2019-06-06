@@ -2,8 +2,6 @@
 256 Pipeline Tools
 DNA of EVE: common core to be used in misc modules
 
-# TBD! Need to fix JSON file changes (CHARACTERS.json >> ASSETS.json)
-
 General notes.
 Versions and publishing. Before we implement Shotgun and develop a publishing mechanizm with it
 we will consider LATEST version of file published (which needs to be used).
@@ -43,18 +41,21 @@ resolution_LR = (1280, 540)
 # ++++++++++++++++++++++++++++++++++++++++++++
 #os.environ['ROOT'] = 'P:/PROJECTS/NSI'
 #os.environ['JOB'] = 'P:/PROJECTS/NSI/PROD/3D'
+
 # ++++++++++++++++++++++++++++++++++++++++++++
 
 # PATHS
 # Documentation paths
 DOCS = 'https://github.com/kiryha/Eve/wiki/'
-# Get project root folder, defined in runHoudini.py  <P:/PROJECTS/NSI/>
+# Get Eve pipeline root folder <P:/Eve>
+rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/') # '{}/PREP/PIPELINE'.format(rootProject)
+
 '''
+# Get project root folder, defined in runHoudini.py  <P:/PROJECTS/NSI/>
 rootProject = os.environ['ROOT']
 # Get root for Houdini project ($JOB variable), defined in runHoudini.py <P:/PROJECTS/NSI/PROD/3D>
 root3D = os.environ['JOB']
-# Get pipeline root folder <P:/PROJECTS/NSI/PREP/PIPELINE>
-rootPipeline = '{}/PREP/PIPELINE'.format(rootProject)
+
 # Get path to *.UI files <P:/PROJECTS/NSI/PREP/PIPELINE/EVE/ui/ui>
 folderUI = '{0}/{1}/ui/ui'.format(rootPipeline, pipelineName)
 
