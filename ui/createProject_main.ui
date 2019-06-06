@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>267</width>
-    <height>267</height>
+    <width>274</width>
+    <height>350</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -70,6 +70,18 @@
      </widget>
     </item>
     <item>
+     <widget class="QGroupBox" name="groupBox_4">
+      <property name="title">
+       <string>Options</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_7">
+       <item>
+        <widget class="QLineEdit" name="lin_options"/>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <widget class="QPushButton" name="btn_create">
       <property name="minimumSize">
        <size>
@@ -89,7 +101,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>267</width>
+     <width>274</width>
      <height>21</height>
     </rect>
    </property>

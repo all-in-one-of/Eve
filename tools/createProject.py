@@ -1,5 +1,5 @@
 '''
-256 Pipeline tools.
+256 Pipeline tools
 EVE - Houdini pipeline for VFX production
 
 Create folder structure for the project and copy pipeline files into it
@@ -26,6 +26,7 @@ filterFolders = ['.dev', '.git', '.idea', 'hips']
 filterFiles = ['createProject.py', 'createProject.bat', 'README.md']
 uiFile_main = 'P:/Eve/ui/createProject_main.ui'
 uiFile_warning = 'P:/Eve/ui/createProject_warning.ui'
+houdiniBuild = '17.0.459'
 
 # WARNING WINDOW
 class Warning(QWidget):
@@ -87,11 +88,13 @@ class CreateProject(QWidget):
         self.btn_setFolder = self.window.findChild(QPushButton, 'btn_setFolder')
         self.lin_name = self.window.findChild(QLineEdit, 'lin_name')
         self.lab_path = self.window.findChild(QLabel, 'lab_path')
+        self.lin_options = self.window.findChild(QLineEdit, 'lin_options')
         self.btn_create = self.window.findChild(QPushButton, 'btn_create')
 
 
         self.lab_path.setText('C:')
         self.lin_name.setText('MY_PROJECT')
+        self.lin_options.setText(houdiniBuild)
 
         # SETUP COMMON VARIABLES
         self.projectFolder = None # Project location
@@ -202,7 +205,10 @@ class CreateProject(QWidget):
         for line in launcherPY_SRC:
             # Edit per project variables
             if line.startswith('rootPipeline ='):
-                line = 'rootPipeline = "{}"\n'.format(dna.rootPipeline)
+                line = "rootPipeline = '{}'\n".format(dna.rootPipeline)
+            elif line.startswith('build ='):
+                line = "build = '{}'\n".format(self.lin_options.text())
+
             launcherPY_DST.write(line)
 
         # BAT

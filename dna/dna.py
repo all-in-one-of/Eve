@@ -37,18 +37,11 @@ frameStart = 1
 resolution_HR = (1920, 810)
 resolution_LR = (1280, 540)
 
-# TEMP HARDCODE TO RUN DNA IN PYCHARM!!!
-# ++++++++++++++++++++++++++++++++++++++++++++
-#os.environ['ROOT'] = 'P:/PROJECTS/NSI'
-#os.environ['JOB'] = 'P:/PROJECTS/NSI/PROD/3D'
-
-# ++++++++++++++++++++++++++++++++++++++++++++
-
 # PATHS
 # Documentation paths
 DOCS = 'https://github.com/kiryha/Eve/wiki/'
 # Get Eve pipeline root folder <P:/Eve>
-rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/') # '{}/PREP/PIPELINE'.format(rootProject)
+rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/')
 
 '''
 # Get project root folder, defined in runHoudini.py  <P:/PROJECTS/NSI/>

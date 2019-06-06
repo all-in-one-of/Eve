@@ -14,8 +14,10 @@ root3D = '{0}/PROD/3D'.format(rootProject)
 # HOUDINI_OTLSCAN_PATH
 pathHDA = ''
 # Houdini install dir
-build = '17.0.459'
+build = ''
 houdini = 'C:/Program Files/Side Effects Software/Houdini {0}/bin/houdinifx.exe'.format(build)
+# HDA skip folders
+filterFolders = ['backup']
 
 
 def getHDA():
@@ -32,13 +34,10 @@ def getHDA():
         '''
         global pathHDA
 
-        filterFolders = ['backup', 'REM_NC', 'REM']
-
         for folder in listPaths:
             path = folder[0].replace('\\', '/')
             # Filter unnecessary folders
             if not path.split('/')[-1] in filterFolders:
-            # if not 'backup' in path: # Exclude backup folders
                 pathHDA += '{};'.format(folder[0].replace('\\', '/'))
 
     # Get list of sub folders
@@ -68,8 +67,7 @@ os.environ['HOUDINI_OTLSCAN_PATH'] = getHDA()
 os.environ['HOUDINI_PATH'] = '{}/PREP/PIPELINE/houdini;&'.format(rootProject)
 # Path to custom python tools
 os.environ['PYTHONPATH'] = '{0}/dna;{0}/tools;&'.format(rootPipeline)
-# Houdini console
-# os.environ['HOUDINI_WINDOW_CONSOLE'] = '1'
+
 # Icons
 # os.environ['HOUDINI_UI_ICON_PATH'] = '{}/EVE/icons'.format(rootPipeline)
 # Houdini current user pref folder in MyDocuments (win)
@@ -84,4 +82,4 @@ os.environ['PYTHONPATH'] = '{0}/dna;{0}/tools;&'.format(rootPipeline)
 subprocess.Popen(houdini)
 
 # Prevent closing CMD window
-raw_input()
+# raw_input()
