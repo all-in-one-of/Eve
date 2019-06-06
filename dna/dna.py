@@ -43,7 +43,6 @@ DOCS = 'https://github.com/kiryha/Eve/wiki/'
 # Get Eve pipeline root folder <P:/Eve>
 rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/')
 
-'''
 # Get project root folder, defined in runHoudini.py  <P:/PROJECTS/NSI/>
 rootProject = os.environ['ROOT']
 # Get root for Houdini project ($JOB variable), defined in runHoudini.py <P:/PROJECTS/NSI/PROD/3D>
@@ -57,7 +56,7 @@ genesFile_project = '{0}/EVE/genes/project.json'.format(rootPipeline)
 genes_project = json.load(open(genesFile_project))
 genesFile_render = '{0}/EVE/genes/render.json'.format(rootPipeline)
 #genes_render = json.load(open(genesFile_render))
-'''
+
 
 # PROJECT FOLDER STRUCTURE
 # Shots structure

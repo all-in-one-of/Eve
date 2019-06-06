@@ -32,3 +32,6 @@ Run cmd and exequte: `pip install PySide`
 #### Install Github Desktop
 Install [Github Desktop](https://electronjs.org/apps/github-desktop) and clone this repo to the local drive, 
 where you supposing to keep Eve pipeline.
+
+## Usage
+Go to Eve local folder on your HDD and run cre

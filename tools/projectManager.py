@@ -11,22 +11,88 @@ import sys
 import shutil
 import webbrowser
 
-# DNA import
-sys.path.append('P:/Eve/')
-import dna.dna as dna
-
 # Py Side import
 from PySide.QtGui import *
 from PySide import QtUiTools, QtCore
 
 # COMMON SCRIPT VARIABLES
+rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/')
+DOCS = 'https://github.com/kiryha/Eve/wiki/'
 # Folder names to skip when run copyTree
 filterFolders = ['.dev', '.git', '.idea', 'hips']
 # File names to skip when run copyTree
-filterFiles = ['createProject.py', 'createProject.bat', 'README.md']
-uiFile_main = 'P:/Eve/ui/createProject_main.ui'
-uiFile_warning = 'P:/Eve/ui/createProject_warning.ui'
+filterFiles = []
+uiFile_main = 'P:/Eve/ui/projectManager_main.ui'
+uiFile_warning = 'P:/Eve/ui/projectManager_warning.ui'
 houdiniBuild = '17.0.459'
+
+# PROJECT FOLDER STRUCTURE
+# Shots structure
+SHOTS = [
+    ['010',[
+        ['SHOT_010', []],
+        ['SHOT_020', []]
+    ]]
+        ]
+# Assets structure
+ASSETS = [
+    ['CHARACTERS', []],
+    ['ENVIRONMENTS', []],
+    ['PROPS', []],
+    ['STATIC', []]
+        ]
+# Types structure
+TYPES = [
+    ['ASSETS', ASSETS],
+    ['SHOTS', SHOTS]
+    ]
+# Formats structure
+FORMATS = [
+    ['ABC', []],
+    ['GEO', []],
+    ['FBX', []]
+    ]
+# Folders structure
+FOLDERS = [
+    ['EDIT', [
+        ['OUT', []],
+        ['PROJECT', []]
+    ]],
+    ['PREP', [
+        ['ART', []],
+        ['SRC', []],
+        ['PIPELINE', []],
+        ]],
+    ['PROD', [
+        ['2D', [
+            ['COMP', SHOTS],
+            ['RENDER', SHOTS]
+        ]],
+        ['3D', [
+            ['lib', [
+                ['ANIMATION', []],
+                ['MATERIALS', ASSETS] # Or TYPES ?
+            ]],
+            ['fx',TYPES],
+            ['caches',TYPES],
+            ['hda', [
+                ['ASSETS', ASSETS],
+                ['FX', TYPES],
+             ]],
+            ['render', SHOTS],
+            ['scenes', [
+                ['ASSETS', ASSETS],
+                ['ANIMATION', SHOTS],
+                ['FX', TYPES],
+                ['LAYOUT', SHOTS],
+                ['LOOKDEV', TYPES],
+                ['RENDER', SHOTS]
+            ]],
+            ['textures', TYPES],
+        ]],
+    ]]
+    ]
+
 
 # WARNING WINDOW
 class Warning(QWidget):
@@ -58,14 +124,14 @@ class Warning(QWidget):
 
     def proceed(self):
         # PROCEED button
-        CreateProject.createProject(self.parent, 'OK')
+        ProjectManager.createProject(self.parent, 'OK')
 
     def cancel(self):
         # CANCEL button
-        CreateProject.createProject(self.parent, 'NO')
+        ProjectManager.createProject(self.parent, 'NO')
 
 # MAIN MODULE
-class CreateProject(QWidget):
+class ProjectManager(QWidget):
     '''
     Create Project MAIN MODULE
     Set project name and location in UI, create folder structure, copy pipeline files
@@ -76,7 +142,7 @@ class CreateProject(QWidget):
     assets = {'CHARACTERS': [], 'ENVIRONMENTS': [], 'PROPS': [], 'STATIC':[]}
 
     def __init__(self):
-        super(CreateProject, self).__init__()
+        super(ProjectManager, self).__init__()
         # SETUP UI
         ui_file = QtCore.QFile(uiFile_main)
         ui_file.open(QtCore.QFile.ReadOnly)
@@ -101,8 +167,8 @@ class CreateProject(QWidget):
         self.projectName = None # Project name
 
         # SETUP FUNCTIONALITY
-        self.act_docs.triggered.connect(lambda:  self.help(dna.DOCS))
-        self.act_help.triggered.connect(lambda:  self.help('{0}Tools#create-project'.format(dna.DOCS)))
+        self.act_docs.triggered.connect(lambda:  self.help(DOCS))
+        self.act_help.triggered.connect(lambda:  self.help('{0}Tools#project-manager'.format(DOCS)))
         self.btn_create.clicked.connect(self.createProject)
         self.btn_setFolder.clicked.connect(self.selectProjectFolder)
 
@@ -190,10 +256,10 @@ class CreateProject(QWidget):
         '''
 
         # Create nested folder structure
-        self.createFolders(projectRoot, dna.FOLDERS)
+        self.createFolders(projectRoot, FOLDERS)
 
         # Create Houdini launcher
-        launcherNamePY_SRC = '{}/src/runHoudini.py'.format(dna.rootPipeline)
+        launcherNamePY_SRC = '{}/src/runHoudini.py'.format(rootPipeline)
         launcherNamePY_DST = '{}/PREP/PIPELINE/runHoudini.py'.format(projectRoot)
         launcherNameBAT_DST = '{}/PREP/PIPELINE/runHoudini.bat'.format(projectRoot)
 
@@ -205,7 +271,7 @@ class CreateProject(QWidget):
         for line in launcherPY_SRC:
             # Edit per project variables
             if line.startswith('rootPipeline ='):
-                line = "rootPipeline = '{}'\n".format(dna.rootPipeline)
+                line = "rootPipeline = '{}'\n".format(rootPipeline)
             elif line.startswith('build ='):
                 line = "build = '{}'\n".format(self.lin_options.text())
 
@@ -218,8 +284,11 @@ class CreateProject(QWidget):
         launcherPY_DST.close()
         launcherBAT_DST.close()
 
+        # Create genes
+
+
         # Copy Houdini prefs
-        self.copyTree('{}/src/houdini'.format(dna.rootPipeline), '{}/PREP/PIPELINE/houdini'.format(projectRoot))
+        self.copyTree('{}/src/houdini'.format(rootPipeline), '{}/PREP/PIPELINE/houdini'.format(projectRoot))
 
         print '>> Folder structure with pipeline files created in {0}/'.format(projectRoot)
 
@@ -228,9 +297,6 @@ class CreateProject(QWidget):
         Create new project on HDD and in Shotgun:
         :param catchWarning: returned value from Warning class (OK or NO)
         '''
-
-        # print '>> SHOTS: {}'.format(dna.SHOTS)
-        # print '>> ASSETS: {}'.format(dna.ASSETS)
 
         projectRoot = self.lab_path.text()
         projectName = self.lin_name.text()
@@ -264,6 +330,6 @@ class CreateProject(QWidget):
 
 # Run Create Project script
 app = QApplication([])
-CP = CreateProject()
+CP = ProjectManager()
 CP.window.show()
 app.exec_()
