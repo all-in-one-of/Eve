@@ -33,5 +33,8 @@ Run cmd and exequte: `pip install PySide`
 Install [Github Desktop](https://electronjs.org/apps/github-desktop) and clone this repo to the local drive, 
 where you supposing to keep Eve pipeline.
 
+[![](https://live.staticflickr.com/65535/48019630316_a4e0176d24_o.gif)](https://live.staticflickr.com/65535/48019630316_a4e0176d24_o.gif)
+
+
 ## Usage
-Go to Eve local folder on your HDD and run Project Manager tool with projectManager.bat
+Go to Eve local folder on your HDD and run Project Manager tool with `projectManager.bat`
