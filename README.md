@@ -47,3 +47,7 @@ Go to Eve local folder on your HDD and run Project Manager tool with `projectMan
 
 Select location of your project on hard drive, enter project name and Houdini build number and press "Create Project" button.
 Go to `<projectLocation>/PREP/PIPELINE/`, run Houdini with `runHoudini.bat` and do your CGI magic! 
+
+You can create a shortcut for bat file, place it in any convenient location (Desktop, for example) to access all your Eve projects easily. 
+
+[](images/desktop_cloneRepo_01.gif)

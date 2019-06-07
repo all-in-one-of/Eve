@@ -11,6 +11,7 @@ TBD: open PIPELINE folder after project created
 import os
 import shutil
 import webbrowser
+import subprocess
 
 # Py Side import
 from PySide.QtGui import *
@@ -62,7 +63,9 @@ FOLDERS = [
     ['PREP', [
         ['ART', []],
         ['SRC', []],
-        ['PIPELINE', []],
+        ['PIPELINE', [
+            ['genes', []]
+        ]],
         ]],
     ['PROD', [
         ['2D', [
@@ -157,6 +160,7 @@ class ProjectManager(QWidget):
         self.lab_path = self.window.findChild(QLabel, 'lab_path')
         self.lin_options = self.window.findChild(QLineEdit, 'lin_options')
         self.btn_create = self.window.findChild(QPushButton, 'btn_create')
+        self.chb_example = self.window.findChild(QCheckBox, 'chb_example')
 
 
         self.lab_path.setText('C:')
@@ -247,7 +251,7 @@ class ProjectManager(QWidget):
                     if not os.path.exists(new):
                         shutil.copy2(src, new)
 
-    def createProject_HDD(self, projectRoot):
+    def createProject_HDD(self, rootProject):
         '''
         Create project on HDD and copy/create pipeline files:
             - Houdini launcher
@@ -257,12 +261,12 @@ class ProjectManager(QWidget):
         '''
 
         # Create nested folder structure
-        self.createFolders(projectRoot, FOLDERS)
+        self.createFolders(rootProject, FOLDERS)
 
         # Create Houdini launcher
         launcherNamePY_SRC = '{}/src/runHoudini.py'.format(rootPipeline)
-        launcherNamePY_DST = '{}/PREP/PIPELINE/runHoudini.py'.format(projectRoot)
-        launcherNameBAT_DST = '{}/PREP/PIPELINE/runHoudini.bat'.format(projectRoot)
+        launcherNamePY_DST = '{}/PREP/PIPELINE/runHoudini.py'.format(rootProject)
+        launcherNameBAT_DST = '{}/PREP/PIPELINE/runHoudini.bat'.format(rootProject)
 
         launcherPY_SRC = open(launcherNamePY_SRC, 'r')
         launcherPY_DST = open(launcherNamePY_DST, 'w')
@@ -286,12 +290,22 @@ class ProjectManager(QWidget):
         launcherBAT_DST.close()
 
         # Create genes
-        self.copyTree('{}/src/genes'.format(rootPipeline), '{}/PREP/PIPELINE/genes'.format(projectRoot))
+        if self.chb_example.isChecked():
+            # Copy example genes
+            self.copyTree('{}/src/genes'.format(rootPipeline), '{}/PREP/PIPELINE/genes'.format(rootProject))
+        else:
+            # Create new clean genes
+            genes_project = '{}/PREP/PIPELINE/genes/project.json'.format(rootProject)
+            genes_render = '{}/PREP/PIPELINE/genes/render.json'.format(rootProject)
+            open(genes_project, 'a').close()
+            open(genes_render, 'a').close()
+
+
 
         # Copy Houdini prefs
-        self.copyTree('{}/src/settings'.format(rootPipeline), '{}/PREP/PIPELINE/settings'.format(projectRoot))
+        self.copyTree('{}/src/settings'.format(rootPipeline), '{}/PREP/PIPELINE/settings'.format(rootProject))
 
-        print '>> Folder structure with pipeline files created in {0}/'.format(projectRoot)
+        print '>> Folder structure with pipeline files created in {0}/'.format(rootProject)
 
     def createProject(self, catchWarning = None):
         '''
@@ -299,17 +313,14 @@ class ProjectManager(QWidget):
         :param catchWarning: returned value from Warning class (OK or NO)
         '''
 
-        projectRoot = self.lab_path.text()
-        projectName = self.lin_name.text()
+        rootProject = self.lab_path.text()
 
-        # HDD
-        # Create folder structure on HDD and copy pipeline files
-
-        if os.path.exists(projectRoot):
+        # Create folder structure on HDD with necessary pipeline files
+        if os.path.exists(rootProject):
             # If project folder already exists
             if catchWarning == None:
                 # Run warning dialog
-                self.warning = Warning(self, projectRoot)  # Run SNV window
+                self.warning = Warning(self, rootProject)  # Run SNV window
                 win = self.warning.window.show()
 
                 if not win:  # Prevent script to run further before user reply in warning UI
@@ -317,17 +328,21 @@ class ProjectManager(QWidget):
 
             elif catchWarning == 'OK':
                 # Create project structure on HDD in existing folder
-                self.createProject_HDD(projectRoot)
+                self.createProject_HDD(rootProject)
             else:
                 return
         else:
             # Create new project structure on HDD
-            self.createFolder(projectRoot)
-            self.createProject_HDD(projectRoot)
+            self.createFolder(rootProject)
+            self.createProject_HDD(rootProject)
+
+        # Open folder with wrapper
+        pathWrapper = '{}/PREP/PIPELINE'.format(rootProject)
+        subprocess.Popen('explorer "{}"'.format(pathWrapper.replace('/', '\\')))
 
         # Report about creation
         print '>> Project creation complete!'
-        print '>> Run Houdini with {0}/PREP/PIPELINE/runHoudini.bat and create a magic!'.format(projectRoot)
+        print '>> Run Houdini with {0}/PREP/PIPELINE/runHoudini.bat and create a magic!'.format(rootProject)
 
 # Run Create Project script
 app = QApplication([])

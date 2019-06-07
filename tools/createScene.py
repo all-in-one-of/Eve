@@ -3,10 +3,16 @@
 
 import hou
 import os
+import json
 
 from PySide2 import QtCore, QtUiTools, QtWidgets
 import dna
 reload(dna)
+
+# Get environment data
+rootProject = os.environ['ROOT']
+genesFile_project = '{0}/PREP/PIPELINE/genes/project.json'.format(rootProject)
+genes_project = json.load(open(genesFile_project))
 
 # Get Houdini root nodes
 sceneRoot = hou.node('/obj/')
@@ -54,6 +60,7 @@ class CreateScene(QtWidgets.QWidget):
         self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         self.ui.btn_createRenderScene.clicked.connect(lambda: self.createScene(fileType=dna.fileTypes['renderScene']))
+        self.ui.btn_createAnimScene.clicked.connect(lambda: self.createScene(fileType=dna.fileTypes['animationScene']))
         self.ui.btn_createRenderScene.clicked.connect(self.close)
 
     def createScene(self, fileType, catch = None):
@@ -65,7 +72,7 @@ class CreateScene(QtWidgets.QWidget):
         :return:
         '''
 
-        print '>> Building Render scene...'
+        print '>> Building {} scene...'.format(fileType)
 
         # Get sequence and shot from UI
         sequenceNumber = self.ui.lin_episode.text()
@@ -115,7 +122,7 @@ class CreateScene(QtWidgets.QWidget):
         # Save scene
         hou.hipFile.save()
 
-        print '>> Building Render scene done!'
+        print '>> Building {} scene done!'.format(fileType)
 
     def createHDA(self, parent, hdaTypeName, hdaName):
         '''
@@ -160,7 +167,7 @@ class CreateScene(QtWidgets.QWidget):
         if fileType == dna.fileTypes['renderScene']:
 
             # Get shot data
-            shotGenes = dna.getShotGenes(sequenceNumber, shotNumber)
+            shotGenes = dna.getShotGenes(sequenceNumber, shotNumber, genes_project)
             env_data = shotGenes['environmentData']
 
             # Initialize scene
@@ -226,7 +233,7 @@ class CreateScene(QtWidgets.QWidget):
             for param, value in dna.renderSettings['draft'].iteritems():
                 mantra.parm(param).set(value)
 
-# Create CS objectfileTypes
+# Create CS object
 CS = CreateScene()
 
 def run():

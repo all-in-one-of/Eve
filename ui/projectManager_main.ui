@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>293</width>
-    <height>350</height>
+    <width>291</width>
+    <height>379</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -72,11 +72,28 @@
     <item>
      <widget class="QGroupBox" name="groupBox_4">
       <property name="title">
-       <string>Options: Houdini build</string>
+       <string>Options</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_7">
        <item>
-        <widget class="QLineEdit" name="lin_options"/>
+        <widget class="QSplitter" name="splitter">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Houdini build</string>
+          </property>
+         </widget>
+         <widget class="QLineEdit" name="lin_options"/>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="chb_example">
+         <property name="text">
+          <string>Copy Example Data</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -101,7 +118,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>293</width>
+     <width>291</width>
      <height>21</height>
     </rect>
    </property>

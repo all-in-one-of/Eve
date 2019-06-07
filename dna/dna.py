@@ -66,6 +66,7 @@ fileNameAnimation = fileTypes['animationScene'] + '_E{0}_S{1}_{2}.{3}'     # Ani
 fileNameRender =    fileTypes['renderScene'] + '_E{0}_S{1}_{2}.{3}'        # Render scene name
 fileNameCamera =    fileTypes['cacheCamera'] + '_E{0}_S{1}_{2}.{3}'        # Camera exported ANM >> RND name
 
+filePathAnimation =       '{0}/scenes/ANIMATION/{1}/SHOT_{2}/{3}'          # Animation scene path
 filePathRender =          '{0}/scenes/RENDER/{1}/SHOT_{2}/{3}'             # Render scene path
 filePathSequenceRender =  '{0}/render/{1}/SHOT_{2}/{3}/{4}'                # Render sequence path
 filePathSequenceCache =   '$JOB/geo/SHOTS/{0}/SHOT_{1}/{2}/GEO/{3}/{4}'    # Characters geometry cache path
@@ -310,7 +311,6 @@ def buildFilePath(version, fileType, scenePath=None, characterName=None, sequenc
     :return filePath: generated full path (string)
     '''
 
-
     if scenePath != None:
         filePathData = analyzeFliePath(scenePath)
         sequenceNumber = filePathData['sequenceNumber']
@@ -319,7 +319,12 @@ def buildFilePath(version, fileType, scenePath=None, characterName=None, sequenc
     # RENDER scene path
     if fileType == fileTypes['renderScene']:
         fileName = fileNameRender.format(sequenceNumber, shotNumber, version, extensionHoudini)
-        filePath = filePathRender.format(root3D,sequenceNumber, shotNumber, fileName)
+        filePath = filePathRender.format(root3D, sequenceNumber, shotNumber, fileName)
+
+    # ANIMATION scene path
+    if fileType == fileTypes['animationScene']:
+        fileName = fileNameAnimation.format(sequenceNumber, shotNumber, version, extensionHoudini)
+        filePath = filePathAnimation.format(root3D, sequenceNumber, shotNumber, fileName)
 
     # FLIPBOOK or MANTRA render sequence path
     elif fileType == fileTypes['flipbookSequence'] or fileType == fileTypes['renderSequence']:
@@ -396,7 +401,7 @@ def buildRenderSequencePath(scenePath=None):
 # shotNumber = '010'
 # shotCode = 'SHOT_010'
 
-def getShotData(sequenceNumber, shotNumber):
+def getShotData(sequenceNumber, shotNumber, genes_project):
     '''
     Get shot dictionary via sequence and shot numbers (010 > 010)
 
@@ -408,9 +413,6 @@ def getShotData(sequenceNumber, shotNumber):
     :return shot: shot dictionary
     {'code': 'SHOT_010', 'sg_cut_out': 200, 'sg_sequence': {'name': '010'}, 'assets': [{'name': 'CITY'}, {'name': 'ROMA'}]}
     '''
-
-    # Reload project data
-    genes_project = json.load(open(genesFile_project))
 
     shotCode = 'SHOT_{0}'.format(shotNumber)
     SHOT = None
@@ -427,7 +429,7 @@ def getShotData(sequenceNumber, shotNumber):
     else:
         return SHOT
 
-def getAssetsDataByShot(shotData):
+def getAssetsDataByShot(shotData, genes_project):
     '''
     Get full dictionaries of assets LINKED TO SHOT (including FXs)
 
@@ -483,7 +485,7 @@ def getAssetDataByType(assetsData, assetType):
                 listFXs.append(assetData)
         return listFXs
 
-def getShotGenes(sequenceNumber, shotNumber):
+def getShotGenes(sequenceNumber, shotNumber, genes_project):
     '''
     Pull all asset and shot data from the database during one call:
        - Get data for the current shot
@@ -515,8 +517,8 @@ def getShotGenes(sequenceNumber, shotNumber):
 
     shotGenes = {}
 
-    shotData = getShotData(sequenceNumber, shotNumber)
-    assetsData = getAssetsDataByShot(shotData)
+    shotData = getShotData(sequenceNumber, shotNumber, genes_project)
+    assetsData = getAssetsDataByShot(shotData, genes_project)
     environmentData = getAssetDataByType(assetsData, 'Environment')
     charactersData = getAssetDataByType(assetsData, 'Character')
     fxData = getAssetDataByType(assetsData, 'FX')
@@ -584,25 +586,3 @@ def createFolder(filePath):
     fileLocation = analyzeFliePath(filePath)['fileLocation']
     if not os.path.exists(fileLocation):
         os.makedirs(fileLocation)
-
-#shotData = getShotData('000', '010')
-#assetsData = getAssetsDataByShot(shotData)
-#envData = getAssetDataByType(assetsData,  'Environment')
-#charData = getAssetDataByType(assetsData,  'Character')
-#fxData = getAssetDataByType(assetsData, 'FX')
-# print shotData
-# print assetsData
-# print charData
-# shotGenes = getShotGenes('000', '010')
-# print shotGenes['environmentData']
-
-# analyzeFileName('CITY_ANM_001.hipnc')
-# print buildFilePath('010', fileTypes['renderScene'],sequenceNumber='010', shotNumber='010' )
-# print buildFilePath('001', fileTypes['cacheAnim'], scenePath='P:/PROJECTS/NSI/PROD/3D/scenes/RENDER/010/SHOT_010/RND_E010_S010_010.hipnc')
-# print buildFilePath('001', fileTypes['cacheCamera'], scenePath='P:/PROJECTS/NSI/PROD/3D/scenes/RENDER/010/SHOT_010/RND_E010_S010_006.hiplc')
-# print convertPathCache('P:/PROJECTS/NSI/PROD/3D/geo/SHOTS/010/SHOT_330/CAM/CAM_E010_S330_001.hiplc')
-
-#scenePath = buildFilePath('001', fileTypes['renderScene'], sequenceNumber='010', shotNumber='010')
-#print scenePath
-#print buildRenderSequencePath(scenePath)
-#print analyzeFliePath('P:/PROJECTS/NSI/PROD/3D/render/010/SHOT_020/001/E010_S020_002.$F.exr')
