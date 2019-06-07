@@ -50,4 +50,3 @@ Go to `<projectLocation>/PREP/PIPELINE/`, run Houdini with `runHoudini.bat` and 
 
 You can create a shortcut for bat file, place it in any convenient location (Desktop, for example) to access all your Eve projects easily. 
 
-![](images/desktop_cloneRepo_01.gif)
