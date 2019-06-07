@@ -21,8 +21,8 @@ DOCS = 'https://github.com/kiryha/Eve/wiki/'
 filterFolders = ['.dev', '.git', '.idea', 'hips']
 # File names to skip when run copyTree
 filterFiles = []
-uiFile_main = 'P:/Eve/ui/projectManager_main.ui'
-uiFile_warning = 'P:/Eve/ui/projectManager_warning.ui'
+uiFile_main = '{}/ui/projectManager_main.ui'.format(rootPipeline)
+uiFile_warning = '{}/ui/projectManager_warning.ui'.format(rootPipeline)
 houdiniBuild = '17.0.459'
 
 # PROJECT FOLDER STRUCTURE
