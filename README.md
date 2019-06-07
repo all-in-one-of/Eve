@@ -1,8 +1,10 @@
 # Eve: 3D animation Houdini pipeline
 
 ## Introduction
-This is an **out of the box VFX pipeline** for a single artist or animation studio using Houdini application. 
+"Eve" is an **out of the box VFX pipeline** for a single artist or animation studio using Houdini application. 
 It is full CG oriented pipeline which can handle small tasks with just a few shots as well as huge projects like animation feature or TV series.
+
+This repository is a clean version of early created [Houdini](https://github.com/kiryha/Houdini) pipeline.
 
 ## Requirements and Installation
 Currently, Eve designed to be run on Windows OS. 
@@ -38,3 +40,11 @@ where you supposing to keep Eve pipeline.
 
 ## Usage
 Go to Eve local folder on your HDD and run Project Manager tool with `projectManager.bat`
+
+[![](https://live.staticflickr.com/65535/48019770601_10f9642217_o.gif)](https://live.staticflickr.com/65535/48019770601_10f9642217_o.gif)
+
+Select location of your project on hard drive, enter project name and Houdini build number and press "Create Project" button.
+Go to `<projectLocation>/PREP/PIPELINE/`, run Houdini with `runHoudini.bat` and do your CGI magic! 
+
+#### Documentation
+Refer to [Eve wiki](https://github.com/kiryha/Houdini/wiki) for more info about pipeline usage and some fancy tutorials!

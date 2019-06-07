@@ -3,6 +3,8 @@
 EVE - Houdini pipeline for VFX production
 
 Create folder structure for the project and copy pipeline files into it
+
+TBD: open PIPELINE folder after project created
 '''
 
 # Common modules import
