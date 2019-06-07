@@ -33,7 +33,7 @@ Run cmd and exequte: `pip install PySide`
 Install [Github Desktop](https://electronjs.org/apps/github-desktop) and clone this repo to the local drive, 
 where you supposing to keep Eve pipeline.
 
-[![](https://live.staticflickr.com/65535/48019630316_a4e0176d24_o.gif)](https://live.staticflickr.com/65535/48019630316_a4e0176d24_o.gif)
+[![](https://live.staticflickr.com/65535/48019681856_fd0a55facb_o.gif)](https://live.staticflickr.com/65535/48019681856_fd0a55facb_o.gif)
 
 
 ## Usage
