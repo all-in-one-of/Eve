@@ -6,6 +6,7 @@
  a single file. -->
 
   <toolshelf name="eve" label="EVE">
+    <memberTool name="project_manager"/>
     <memberTool name="snv"/>
     <memberTool name="create Flipbook"/>
     <memberTool name="createScene"/>
@@ -79,5 +80,11 @@ renderManager.run()]]></script>
     <script scriptType="python"><![CDATA[import renderFarm
 reload(renderFarm)
 renderFarm.run()]]></script>
+  </tool>
+
+  <tool name="project_manager" label="PM" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import projectManager
+reload(projectManager)
+projectManager.run()]]></script>
   </tool>
 </shelfDocument>
