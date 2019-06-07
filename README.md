@@ -6,11 +6,13 @@ It is full CG oriented pipeline which can handle small tasks with just a few sho
 
 This repository is a clean version of early created [Houdini](https://github.com/kiryha/Houdini) pipeline.
 
+#### Documentation
+Refer to [Eve wiki](https://github.com/kiryha/Houdini/wiki) for more info about pipeline usage and some fancy tutorials!
+
 ## Requirements and Installation
 Currently, Eve designed to be run on Windows OS. 
-Here is the list of things you need to have before pipeline will works.
+Here is the list of things you need to have before Eve pipeline will works:
 
-Before running Houdini Pipeline Toolkit you need to install:
 - Houdini  
 - Python 2.7.5 x 64 (or later version) 
 - pip  
@@ -45,6 +47,3 @@ Go to Eve local folder on your HDD and run Project Manager tool with `projectMan
 
 Select location of your project on hard drive, enter project name and Houdini build number and press "Create Project" button.
 Go to `<projectLocation>/PREP/PIPELINE/`, run Houdini with `runHoudini.bat` and do your CGI magic! 
-
-#### Documentation
-Refer to [Eve wiki](https://github.com/kiryha/Houdini/wiki) for more info about pipeline usage and some fancy tutorials!
