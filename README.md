@@ -41,7 +41,7 @@ where you supposing to keep Eve pipeline.
 
 
 ## Usage
-Go to Eve local folder on your HDD and run Project Manager tool with `projectManager.bat`
+Go to Eve local folder on your HDD and run Project Creator tool with `projectCreator.bat` file.
 
 [![](https://live.staticflickr.com/65535/48019770601_10f9642217_o.gif)](https://live.staticflickr.com/65535/48019770601_10f9642217_o.gif)
 

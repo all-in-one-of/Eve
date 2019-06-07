@@ -23,9 +23,9 @@ class ProjectManager(QtWidgets.QWidget):
 
         self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
-
+# Create Tool instance
 PM = ProjectManager()
 
 def run():
-    # Run the Create Scene Tool
+    # Run the Tool
     PM.show()
