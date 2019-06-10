@@ -46,19 +46,12 @@ rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/')
 rootProject = os.environ['ROOT']
 # Get root for Houdini project ($JOB variable), defined in runHoudini.py <P:/PROJECTS/NSI/PROD/3D>
 root3D = os.environ['JOB']
-
 # Get path to *.UI files <X:/Eve/ui>
 folderUI = '{0}/ui'.format(rootPipeline)
-
 # Database files
-# TBD: REMOVE FROM DNA AND EXPLICITLY PASS AS AGRS
-'''
-TBD: REMOVE FROM DNA AND EXPLICITLY PASS AS AGRS
-genesFile_project = '{0}/EVE/genes/project.json'.format(rootPipeline)
-genes_project = json.load(open(genesFile_project))
-genesFile_render = '{0}/EVE/genes/render.json'.format(rootPipeline)
-#genes_render = json.load(open(genesFile_render))
-'''
+genesFileAssets = '{0}/PREP/PIPELINE/genes/assets.json'
+genesFileShots = '{0}/PREP/PIPELINE/genes/shots.json'
+genesFileSequences = '{0}/PREP/PIPELINE/genes/sequences.json'
 
 # FILE NAMES AND PATHS PATTERNS
 fileNameSequence =  'E{0}_S{1}_{2}.$F.{3}'                                 # Output sequence (flipbook, mantra, cache)
@@ -106,6 +99,16 @@ renderSettings = {
     },
     'production': {}
 }
+
+# TEMPLATES
+sequenceTemplate = {"name": ""}
+
+shotTemplate = {"code": "",
+                "sg_cut_out": 0,
+                "sg_sequence": {},
+                "assets": [],
+                "fxs": [],
+                "description": "Template shot"}
 
 # FILE PATH (STRING) MANIPULATIONS
 # File Naming convention for filePath:
@@ -401,35 +404,35 @@ def buildRenderSequencePath(scenePath=None):
 # shotNumber = '010'
 # shotCode = 'SHOT_010'
 
-def getShotData(sequenceNumber, shotNumber, genes_project):
+def getShotData(sequenceNumber, shotNumber, genesShots):
     '''
     Get shot dictionary via sequence and shot numbers (010 > 010)
 
-    To reduce database file (project.json) before using Shotgun we don`t store sequences data there.
+    To reduce database file (shots.json) before using Shotgun we don`t store sequences data there.
     So we looking for shots iterating shots dict, getting linked sequence, getting proper shot (shot > sequence > shot)
     Having Shotgun in place will allow to iterAte sequences and then find proper shot (sequence > shot)
     :param sequenceNumber: string '010'
     :param shotNumber: string '010'
-    :return shot: shot dictionary
-    {'code': 'SHOT_010', 'sg_cut_out': 200, 'sg_sequence': {'name': '010'}, 'assets': [{'name': 'CITY'}, {'name': 'ROMA'}]}
+    :return genesShots: list of shots dictionaries from db file (shots.json)
+    [ {'code': 'SHOT_010', 'sg_cut_out': 200, 'sg_sequence': {'name': '010'}, 'assets': [{'name': 'CITY'}, {'name': 'ROMA'}]}, {}, ...]
     '''
 
     shotCode = 'SHOT_{0}'.format(shotNumber)
-    SHOT = None
+    shotData = None
 
-    for shot in genes_project['SHOTS']:
+    for shot in genesShots:
         # Get shot > sequence data
         if shot['sg_sequence']['name'] == sequenceNumber:
             # Get shot data
             if shot['code'] == shotCode:
-                SHOT = shot
+                shotData = shot
 
-    if SHOT == None:
-        print '>> dna.getShotData: There is no data for shot E{0}_S{1}'.format(sequenceNumber, shotNumber)
+    if shotData == None:
+        print '>> There is no data for shot E{0}_S{1}'.format(sequenceNumber, shotNumber)
     else:
-        return SHOT
+        return shotData
 
-def getAssetsDataByShot(shotData, genes_project):
+def getAssetsDataByShot(shotData, genesAssets):
     '''
     Get full dictionaries of assets LINKED TO SHOT (including FXs)
 
@@ -443,12 +446,12 @@ def getAssetsDataByShot(shotData, genes_project):
 
     # Get assets
     for asset in shotData['assets']:
-        for assetData in genes_project['ASSETS']:
+        for assetData in genesAssets:
             if assetData['code'] == asset['name']:
                 assetsData.append(assetData)
     # Get FXs
     for FX in shotData['fxs']:
-        for assetData in genes_project['ASSETS']:
+        for assetData in genesAssets:
             if assetData['code'] == FX['name']:
                 assetsData.append(assetData)
 
@@ -467,9 +470,11 @@ def getAssetDataByType(assetsData, assetType):
     # assetType = 'Environment', 'Character', 'Prop'
 
     if assetType == 'Environment':
+        listEnvironments = []
         for assetData in assetsData:
             if assetData['sg_asset_type'] == assetType:
-                return assetData
+                listEnvironments.append(assetData)
+        return listEnvironments
 
     if assetType == 'Character':
         listCharacters = []
@@ -485,12 +490,13 @@ def getAssetDataByType(assetsData, assetType):
                 listFXs.append(assetData)
         return listFXs
 
-def getShotGenes(sequenceNumber, shotNumber, genes_project):
+def getShotGene(sequenceNumber, shotNumber, genesShots, genesAssets):
     '''
+
     Pull all asset and shot data from the database during one call:
        - Get data for the current shot
-       - Get assets linked to shot
-       - Organize assets by types (characters, env, props)
+       - Get assets linked to current shot
+       - Organize assets by types (characters, env, props, fx)
 
     shotData = {
            'sg_sequence': {'name': '010'},
@@ -512,24 +518,27 @@ def getShotGenes(sequenceNumber, shotNumber, genes_project):
 
     :param sequenceNumber:
     :param shotNumber:
-    :return shotGenes: Structured shot data as one dictionary
+    :return genesShots: list of shots dictionaries
+    :return genesAssets: list of assets dictionaries
     '''
 
-    shotGenes = {}
+    shotGene = {}
 
-    shotData = getShotData(sequenceNumber, shotNumber, genes_project)
-    assetsData = getAssetsDataByShot(shotData, genes_project)
-    environmentData = getAssetDataByType(assetsData, 'Environment')
-    charactersData = getAssetDataByType(assetsData, 'Character')
-    fxData = getAssetDataByType(assetsData, 'FX')
+    shotData = getShotData(sequenceNumber, shotNumber, genesShots)
 
-    shotGenes['shotData'] = shotData
-    shotGenes['assetsData'] = assetsData
-    shotGenes['environmentData'] = environmentData
-    shotGenes['charactersData'] = charactersData
-    shotGenes['fxData'] = fxData
+    if shotData:
+        assetsData = getAssetsDataByShot(shotData, genesAssets)
+        environmentData = getAssetDataByType(assetsData, 'Environment')
+        charactersData = getAssetDataByType(assetsData, 'Character')
+        fxData = getAssetDataByType(assetsData, 'FX')
 
-    return shotGenes
+        shotGene['shotData'] = shotData
+        # shotGene['assetsData'] = assetsData
+        shotGene['environmentData'] = environmentData
+        shotGene['charactersData'] = charactersData
+        shotGene['fxData'] = fxData
+
+        return shotGene
 
 # SCENE MANIPULATIONS
 
@@ -572,6 +581,12 @@ def collectCamera(camera):
     listCameraNodes.append(camera)
 
     return listCameraNodes
+
+def setCameraParameters(camera):
+    # Set camera parameters
+    camera.parm('far').set(5000)
+    camera.parm('resx').set(resolution_HR[0])
+    camera.parm('resy').set(resolution_HR[1])
 
 # UNSORTED
 def createFolder(filePath):

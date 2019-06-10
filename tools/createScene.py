@@ -11,8 +11,10 @@ reload(dna)
 
 # Get environment data
 rootProject = os.environ['ROOT']
-genesFile_project = '{0}/PREP/PIPELINE/genes/project.json'.format(rootProject)
-genes_project = json.load(open(genesFile_project))
+genesFileShots = dna.genesFileShots.format(rootProject)
+genesFileAssets = dna.genesFileAssets.format(rootProject)
+genesShots = json.load(open(genesFileShots)) # All shots genes
+genesAssets = json.load(open(genesFileAssets)) # All shots genes
 
 # Get Houdini root nodes
 sceneRoot = hou.node('/obj/')
@@ -78,6 +80,10 @@ class CreateScene(QtWidgets.QWidget):
         sequenceNumber = self.ui.lin_episode.text()
         shotNumber = self.ui.lin_shot.text()
 
+        # Get current shot gene
+        shotGene = dna.getShotGene(sequenceNumber, shotNumber, genesShots, genesAssets)
+        if not shotGene:
+            return
 
         # If createRenderScene() runs first time
         if catch == None:
@@ -117,7 +123,7 @@ class CreateScene(QtWidgets.QWidget):
             return
 
         # Build scene content
-        self.buildSceneContent(fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
+        self.buildSceneContent(fileType, shotGene)
 
         # Save scene
         hou.hipFile.save()
@@ -147,7 +153,7 @@ class CreateScene(QtWidgets.QWidget):
 
         return hda
 
-    def buildSceneContent(self, fileType, sequenceNumber, shotNumber):
+    def buildSceneContent(self, fileType, shotGene):
         '''
         Create scene content: import characters, environments, props, materials etc.
 
@@ -163,58 +169,54 @@ class CreateScene(QtWidgets.QWidget):
         :return:
         '''
 
-        # Create Render scene
+        # Expand shot data
+        shotNumber = shotGene['shotData']['code'][-3:]
+        sequenceNumber  = shotGene['shotData']['sg_sequence']['name']
+        env_data = shotGene['environmentData']
+        char_data = shotGene['charactersData']
+        fx_data = shotGene['fxData']
+        frameEnd = shotGene['shotData']['sg_cut_out']
+
+        # Initialize scene
+        scenePath = hou.hipFile.path()
+
+
+        # SETUP SCENE (end frame ...)
+        hou.playbar.setFrameRange(dna.frameStart, frameEnd)
+        hou.playbar.setPlaybackRange(dna.frameStart, frameEnd)
+
+        # [Render obj]
+        if env_data:
+            # Add Material lib HDA
+            mat_data = env_data['materials']
+            ML = sceneRoot.createNode(mat_data['hda_name'], mat_data['name'])
+            ML.setPosition([0, 0])
+            # Add lights HDA
+            lit_data = env_data['lights']
+            LIT = sceneRoot.createNode(lit_data['hda_name'], lit_data['name'])
+            LIT.setPosition([0, -dna.nodeDistance_y])
+            # Add Camera via ABC. Done in Import ANM
+
+        # [Environment]
+        if env_data:
+            #ENV = sceneRoot.createNode(env_data['hda_name'], env_data['code'])
+            ENV = self.createHDA(sceneRoot, env_data['hda_name'], env_data['code'])
+            ENV.setPosition([dna.nodeDistance_x, 0])
+
+        # [Characters]
+        if char_data:
+            for n, character in enumerate(char_data):
+                CHAR = dna.createContainer(sceneRoot, char_data[n]['code'], mb=1)
+                CHAR.setPosition([2*dna.nodeDistance_x, n*dna.nodeDistance_y])
+
+        # [FX]
+        if fx_data:
+            for n, FX in enumerate(fx_data):
+                FX = sceneRoot.createNode(FX['hda_name'], FX['code'])
+                FX.setPosition([3*dna.nodeDistance_x, n*dna.nodeDistance_y])
+
+        # Setup Render scene
         if fileType == dna.fileTypes['renderScene']:
-
-            # Get shot data
-            shotGenes = dna.getShotGenes(sequenceNumber, shotNumber, genes_project)
-            env_data = shotGenes['environmentData']
-
-            # Initialize scene
-            scenePath = hou.hipFile.path()
-
-            # SETUP SCENE (end frame ...)
-            frameEnd = shotGenes['shotData']['sg_cut_out']
-            hou.playbar.setFrameRange(dna.frameStart, frameEnd)
-            hou.playbar.setPlaybackRange(dna.frameStart, frameEnd)
-
-            # [Render obj]
-            if env_data:
-                # Add Material lib HDA
-                mat_data = env_data['materials']
-                ML = sceneRoot.createNode(mat_data['hda_name'], mat_data['name'])
-                ML.setPosition([0, 0])
-                # Add lights HDA
-                lit_data = env_data['lights']
-                LIT = sceneRoot.createNode(lit_data['hda_name'], lit_data['name'])
-                LIT.setPosition([0, -dna.nodeDistance_y])
-                # Add Camera via ABC. Done in Import ANM
-
-
-            # [Environment]
-            if env_data:
-                #ENV = sceneRoot.createNode(env_data['hda_name'], env_data['code'])
-                ENV = self.createHDA(sceneRoot, env_data['hda_name'], env_data['code'])
-                ENV.setPosition([dna.nodeDistance_x, 0])
-
-            # [Characters]
-            char_data = shotGenes['charactersData']
-            if char_data:
-                for n, character in enumerate(char_data):
-                    CHAR = dna.createContainer(sceneRoot, char_data[n]['code'], mb=1)
-                    CHAR.setPosition([2*dna.nodeDistance_x, n*dna.nodeDistance_y])
-
-            # [Props]
-            # No props for NSI project.
-
-            # [FX]
-            fx_data = shotGenes['fxData']
-            if fx_data:
-                for n, FX in enumerate(fx_data):
-                    FX = sceneRoot.createNode(FX['hda_name'], FX['code'])
-                    FX.setPosition([3*dna.nodeDistance_x, n*dna.nodeDistance_y])
-
-
             # SETUP MANTRA OUTPUT
             # Create mantra render node
             mantra = outRoot.createNode('ifd', dna.mantra)
@@ -232,6 +234,14 @@ class CreateScene(QtWidgets.QWidget):
             # Set DRAFT parameters
             for param, value in dna.renderSettings['draft'].iteritems():
                 mantra.parm(param).set(value)
+
+        # Setup Animation Scene
+        if fileType == dna.fileTypes['animationScene']:
+            # Create Camera
+            CAM = sceneRoot.createNode('cam', 'E{0}_S{1}'.format(sequenceNumber, shotNumber))
+            CAM.setPosition([0, -dna.nodeDistance_y*2])
+            dna.setCameraParameters(CAM)
+
 
 # Create CS object
 CS = CreateScene()

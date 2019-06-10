@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>321</width>
-    <height>41</height>
+    <height>131</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,9 +15,30 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="btn_addSequences">
+     <property name="text">
+      <string>Add Sequences</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_addShots">
      <property name="text">
       <string>Add Shots</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_addAssets">
+     <property name="text">
+      <string>Add Assets</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btn_addFX">
+     <property name="text">
+      <string>Add FX</string>
      </property>
     </widget>
    </item>

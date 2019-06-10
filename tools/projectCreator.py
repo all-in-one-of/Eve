@@ -12,6 +12,7 @@ import os
 import shutil
 import webbrowser
 import subprocess
+import json
 
 # Py Side import
 from PySide.QtGui import *
@@ -20,6 +21,10 @@ from PySide import QtUiTools, QtCore
 # COMMON SCRIPT VARIABLES
 rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/')
 DOCS = 'https://github.com/kiryha/Eve/wiki/'
+# Database files (duplicated data with DNA)
+genesFileAssets = '{0}/PREP/PIPELINE/genes/assets.json'
+genesFileShots = '{0}/PREP/PIPELINE/genes/shots.json'
+genesFileSequences = '{0}/PREP/PIPELINE/genes/sequences.json'
 # Folder names to skip when run copyTree
 filterFolders = ['.dev', '.git', '.idea', 'hips']
 # File names to skip when run copyTree
@@ -295,11 +300,12 @@ class ProjectManager(QWidget):
             self.copyTree('{}/src/genes'.format(rootPipeline), '{}/PREP/PIPELINE/genes'.format(rootProject))
         else:
             # Create new clean genes
-            genes_project = '{}/PREP/PIPELINE/genes/project.json'.format(rootProject)
-            genes_render = '{}/PREP/PIPELINE/genes/render.json'.format(rootProject)
-            open(genes_project, 'a').close()
-            open(genes_render, 'a').close()
-
+            with open(genesFileAssets.format(rootProject), 'w') as f:
+                json.dump([], f)
+            with open(genesFileShots.format(rootProject), 'w') as f:
+                json.dump([], f)
+            with open(genesFileSequences.format(rootProject), 'w') as f:
+                json.dump([], f)
 
 
         # Copy Houdini prefs

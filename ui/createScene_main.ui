@@ -78,7 +78,7 @@
       </size>
      </property>
      <property name="text">
-      <string>CREATE ANIMATION SCENE</string>
+      <string>Create Animation Scene</string>
      </property>
     </widget>
    </item>
@@ -91,7 +91,7 @@
       </size>
      </property>
      <property name="text">
-      <string>CREATE RENDER SCENE</string>
+      <string>Create Render Scene</string>
      </property>
     </widget>
    </item>

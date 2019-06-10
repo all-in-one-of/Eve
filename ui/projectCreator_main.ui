@@ -30,7 +30,7 @@
           </size>
          </property>
          <property name="text">
-          <string> SET LOCATION</string>
+          <string>Set Location</string>
          </property>
         </widget>
        </item>
@@ -107,7 +107,7 @@
        </size>
       </property>
       <property name="text">
-       <string>CREATE PROJECT</string>
+       <string>Create New Project</string>
       </property>
      </widget>
     </item>
