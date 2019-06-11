@@ -42,21 +42,23 @@ class CreateSequences(QtWidgets.QWidget):
         self.ui.btn_add.clicked.connect(self.close)
 
     def addSequences(self):
-        listSeq = self.ui.lin_seqs.text()
 
+        print genesSequences
+
+        listSeq = self.ui.lin_seqs.text()
         for sequenceName in listSeq.split(' '):
+            print sequenceName
             if dna.checkExistsingEntity(genesFileSequences, sequenceName):
                 print '>> Unable to create sequence {}: Sequence exists!'.format(sequenceName)
-                return
+                continue
 
             sequenceData = dna.sequenceTemplate
-
             sequenceData['code'] = sequenceName
 
             genesSequences.append(sequenceData)
 
-            json.dump(genesSequences, open(genesFileSequences, 'w'), indent=4)
-
+        print genesSequences
+        json.dump(genesSequences, open(genesFileSequences, 'w'), indent=4)
         PM.addSequences(catch='')
 
 class CreateAssset(QtWidgets.QWidget):
@@ -236,8 +238,6 @@ class ProjectManager(QtWidgets.QWidget):
         genesAssets = dna.loadGenes(genesFileAssets)
         # Repopulate Asset
         self.poulateAssets()
-
-    # TO DNA
 
     def addSequences(self, catch=None):
         if catch == None:
