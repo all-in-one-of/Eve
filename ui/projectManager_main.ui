@@ -27,7 +27,11 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QListWidget" name="lis_assets"/>
+       <widget class="QListWidget" name="lis_assets">
+        <property name="selectionMode">
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QSplitter" name="splitter">
@@ -54,22 +58,18 @@
    </item>
    <item>
     <widget class="QGroupBox" name="box_propAsset">
+     <property name="minimumSize">
+      <size>
+       <width>200</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="title">
       <string>Asset Properties</string>
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
-       <widget class="QSplitter" name="splitter_4">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Asset Name </string>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="lin_assetName"/>
-       </widget>
+       <layout class="QVBoxLayout" name="assetLayout"/>
       </item>
       <item>
        <widget class="QPushButton" name="btn_saveAsset">

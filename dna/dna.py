@@ -32,6 +32,9 @@ fileTypes = {'animationScene': 'ANM',
              'cacheAnim': 'CAN',
              'cacheCamera': 'CAM'}
 
+# Asset types
+assetTypes = ['Character', 'Environment', 'Prop', 'FX']
+
 # Common variables
 frameStart = 1
 resolution_HR = (1920, 810)
@@ -109,6 +112,12 @@ shotTemplate = {"code": "",
                 "assets": [],
                 "fxs": [],
                 "description": "Template shot"}
+
+assetTemplate = {"code": "",
+                 "sg_asset_type": "",
+                 "hda_name": "",
+                 "materials": {},
+                 "lights": {}}
 
 # FILE PATH (STRING) MANIPULATIONS
 # File Naming convention for filePath:
@@ -404,6 +413,31 @@ def buildRenderSequencePath(scenePath=None):
 # shotNumber = '010'
 # shotCode = 'SHOT_010'
 
+def loadGenes(genesFile):
+    return json.load(open(genesFile))
+
+def checkExistsAsset(genesFileAssets, assetName):
+    '''
+    Check if asset with provided name exist in database
+    :param assetName:
+    :return:
+    '''
+
+    genesAssets = loadGenes(genesFileAssets)
+    for asset in genesAssets:
+        if asset['code'] == assetName:
+            return True
+
+def deleteAssets(genesFileAssets, assetNames):
+    genesAssets = loadGenes(genesFileAssets)
+    genesAssetFiltered = []
+    for asset in genesAssets:
+        if not asset['code'] in assetNames:
+            genesAssetFiltered.append(asset)
+
+    json.dump(genesAssetFiltered, open(genesFileAssets, 'w'), indent=4)
+
+
 def getShotData(sequenceNumber, shotNumber, genesShots):
     '''
     Get shot dictionary via sequence and shot numbers (010 > 010)
@@ -489,6 +523,17 @@ def getAssetDataByType(assetsData, assetType):
             if assetData['sg_asset_type'] == assetType:
                 listFXs.append(assetData)
         return listFXs
+
+def getAssetDataByName(genesAssets, assetCode):
+    '''
+    Return asset dictionary by asset name
+    :param genesAsset:
+    :param assetCode:
+    :return:
+    '''
+    for asset in genesAssets:
+        if asset['code'] == assetCode:
+            return asset
 
 def getShotGene(sequenceNumber, shotNumber, genesShots, genesAssets):
     '''
