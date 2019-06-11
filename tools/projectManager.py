@@ -16,78 +16,9 @@ rootProject = os.environ['ROOT']
 genesFileAssets = dna.genesFileAssets.format(rootProject)
 genesFileShots = dna.genesFileShots.format(rootProject)
 genesFileSequences = dna.genesFileSequences.format(rootProject)
-#genesProject = json.load(open(genesFileProject))
-
-seqItemParams = ['Number', 'Description']
-
-class AlignDelegate(QtWidgets.QItemDelegate):
-    '''
-    Central alignment of UI table of shots
-    '''
-    def paint(self, painter, option, index):
-        option.displayAlignment = QtCore.Qt.AlignCenter # Center align
-        QtWidgets.QItemDelegate.paint(self, painter, option, index)
-
-class AddSequences(QtWidgets.QWidget):
-    def __init__(self):
-        # SETUP UI WINDOW
-        super(AddSequences, self).__init__()
-        ui_file = "{}/projectManager_sequences.ui".format(dna.folderUI)
-        self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
-
-        # Setup window properties
-        mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.setContentsMargins(0, 0, 0, 0)
-        mainLayout.addWidget(self.ui)
-        self.setLayout(mainLayout)
-        self.resize(320, 120)  # resize window
-        self.setWindowTitle('List of Sequences')  # Title Main window
-        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
-
-        # SETUP SEQ TABLE
-        self.ui.tab_seq.verticalHeader().hide()  # Hide row numbers
-        self.ui.tab_seq.setItemDelegate(AlignDelegate())  # Set text alignment for cells
-        self.ui.tab_seq.setColumnCount(2)  # Columns count
-        # Set columns width
-        self.ui.tab_seq.setColumnWidth(0, 80)
-        self.ui.tab_seq.setColumnWidth(1, 240)
-        self.ui.tab_seq.setHorizontalHeaderLabels(seqItemParams)
-        self.ui.tab_seq.horizontalHeader().setSectionResizeMode(1, QtWidgets.QHeaderView.Stretch)
-
-        # Load existing Sequences
-        self.addSequences()
-
-        # Set up functionality
-        self.ui.btn_add.clicked.connect(self.addSequences)
-
-    def addSequences(self, listSequences=None):
-
-        # INIT LAUNCH: LOAD EXISTING SEQ
-        if listSequences == None:
-
-            sequencesItems = json.load(open(genesFileSequences))
-            print sequencesItems
-
-            # Clear table
-            self.ui.tab_seq.setRowCount(0)
-
-            # for n, seqItem in enumerate(sequencesItems):
-                # seqItem = self.populateSeqItem(seqItem)
-                # shotItemsUP.append(seqItem)
-
-
-        #sequenceNumber = self.ui.lin_sequence.text()
-        #shotNumbers = self.ui.lin_shots.text()
-        #BR.addShots(sequenceNumber, shotNumbers)
-
-    def populateSeqItem(self, seqItem):
-
-        seqNumber = seqItem['name']
-
-        #table = self.ui.tab_seq
-        #rows = table.rowCount()  # Get quantity of rows
-        #table.setRowCount(rows + 1)  # Add one row to existing rows
-        pass
+genesAssets = json.load(open(genesFileAssets))
+genesSequences = json.load(open(genesFileSequences))
+genesShots = json.load(open(genesFileShots))
 
 class ProjectManager(QtWidgets.QWidget):
     def __init__(self):
@@ -100,24 +31,53 @@ class ProjectManager(QtWidgets.QWidget):
         mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.addWidget(self.ui)
         self.setLayout(mainLayout)
-        # self.resize(320, 120)  # resize window
-        self.setWindowTitle('Project Manager')  # Title Main window
-
-        # Functionality
-        self.ui.btn_addShots.clicked.connect(self.addShots)
-        self.ui.btn_addSequences.clicked.connect(self.addSequences)
-
+        self.resize(800, 400)  # resize window
+        self.setWindowTitle('{} Project Manager'.format(os.environ['ROOT'].split('/')[-1]))  # Title Main window
         self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
-    def addSequences(self):
-        SEQ = AddSequences()
-        SEQ.show()
+        # Fill UI
+        self.poulateAssets()
+        self.poulateSequences()
 
-        # Load current sequences
+        # Functionality
+        self.ui.lis_seq.itemClicked.connect(self.poulateShots)
+        self.ui.lis_shots.itemClicked.connect(self.displayShotProperties)
+        self.ui.lis_assets.itemClicked.connect(self.displayAssetProperties)
+        #self.ui.btn_addShots.clicked.connect(self.addShots)
 
-    def addShots(self):
+    def poulateAssets(self):
+        '''Add Asset data to UI'''
+        for asset in genesAssets:
+            self.ui.lis_assets.addItem(asset['code'])
 
-        pass
+    def poulateSequences(self):
+        '''Add Sequence data to UI'''
+        for sequence in genesSequences:
+            self.ui.lis_seq.addItem(sequence['code'])
+
+    def poulateShots(self, sequence):
+        '''Add Shot data to UI'''
+        sequenceCode = sequence.text()
+
+        # Clear list
+        self.ui.lis_shots.clear()
+
+        # get list of shots for current sequence
+        for sequence in genesSequences:
+            if sequence['code'] == sequenceCode:
+                shots = sequence['shots']
+
+        for shot in shots:
+            self.ui.lis_shots.addItem(shot['code'])
+
+    def displayShotProperties(self, shot):
+        shotCode = shot.text()
+        self.ui.lin_shotName.setText(shotCode)
+
+    def displayAssetProperties(self, asset):
+        assetCode = asset.text()
+        self.ui.lin_assetName.setText(assetCode)
+
 
 # Create Tool instance
 PM = ProjectManager()

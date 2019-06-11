@@ -12,18 +12,9 @@
     <memberTool name="createScene"/>
     <memberTool name="export animation data"/>
     <memberTool name="importANM"/>
-    <memberTool name="importFBX"/>
-    <memberTool name="fbx_to_geo"/>
     <memberTool name="render_manager"/>
     <memberTool name="render_farm"/>
   </toolshelf>
-
-  <tool name="fbx_to_geo" label="FBX &gt; GEO" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[import convertFBX
-reload(convertFBX)
-convertFBX.run()
-]]></script>
-  </tool>
 
   <tool name="importANM" label="import ANM" icon="PLASMA_App">
     <script scriptType="python"><![CDATA[import importANM
@@ -36,16 +27,6 @@ importANM.run()
     <script scriptType="python"><![CDATA[import saveNextVersion
 reload(saveNextVersion)
 saveNextVersion.run()]]></script>
-  </tool>
-
-  <tool name="importFBX" label="import FBX" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[#import os, sys
-#path = os.environ['JOB'].replace('PROD/3D', 'PREP/PIPELINE/EVE/tools')
-#sys.path.append(path)
-
-import importFBX
-reload(importFBX)
-importFBX.run()]]></script>
   </tool>
 
   <tool name="createScene" label="Create Scene" icon="PLASMA_App">
@@ -65,9 +46,9 @@ createFlipbook.run()]]></script>
   </tool>
 
   <tool name="export animation data" label="export ANM" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[import exportANM
-reload(exportANM)
-exportANM.run()]]></script>
+    <script scriptType="python"><![CDATA[import exportAnimation
+reload(exportAnimation)
+exportAnimation.run()]]></script>
   </tool>
 
   <tool name="render_manager" label="RND" icon="PLASMA_App">
