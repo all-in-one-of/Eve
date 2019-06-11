@@ -2,6 +2,8 @@
 Create and manage assets and shots in project
 '''
 
+
+# TODO: split list of asset to categories: char, env, prop, fx
 import hou
 import json
 import os
@@ -17,8 +19,45 @@ genesFileAssets = dna.genesFileAssets.format(rootProject)
 genesFileShots = dna.genesFileShots.format(rootProject)
 genesFileSequences = dna.genesFileSequences.format(rootProject)
 genesAssets = dna.loadGenes(genesFileAssets)
-genesSequences = json.load(open(genesFileSequences))
-genesShots = json.load(open(genesFileShots))
+genesSequences = dna.loadGenes(genesFileSequences)
+genesShots = dna.loadGenes(genesFileShots)
+
+class CreateSequences(QtWidgets.QWidget):
+    def __init__(self):
+        # SETUP UI WINDOW
+        super(CreateSequences, self).__init__()
+        ui_main = "{}/projectManager_addSequences.ui".format(dna.folderUI)
+        self.ui = QtUiTools.QUiLoader().load(ui_main, parentWidget=self)
+
+        # Setup window properties
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.addWidget(self.ui)
+        self.setLayout(mainLayout)
+        self.resize(320, 60)  # resize window
+        self.setWindowTitle('Create Sequences')  # Title Main window
+        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
+
+        self.ui.btn_add.clicked.connect(self.addSequences)
+        self.ui.btn_add.clicked.connect(self.close)
+
+    def addSequences(self):
+        listSeq = self.ui.lin_seqs.text()
+
+        for sequenceName in listSeq.split(' '):
+            if dna.checkExistsingEntity(genesFileSequences, sequenceName):
+                print '>> Unable to create sequence {}: Sequence exists!'.format(sequenceName)
+                return
+
+            sequenceData = dna.sequenceTemplate
+
+            sequenceData['code'] = sequenceName
+
+            genesSequences.append(sequenceData)
+
+            json.dump(genesSequences, open(genesFileSequences, 'w'), indent=4)
+
+        PM.addSequences(catch='')
 
 class CreateAssset(QtWidgets.QWidget):
     def __init__(self):
@@ -34,12 +73,13 @@ class CreateAssset(QtWidgets.QWidget):
         self.setLayout(mainLayout)
         self.resize(320, 120)  # resize window
         self.setWindowTitle('Add Asset')  # Title Main window
+        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         ui_asset = "{}/projectManager_asset.ui".format(dna.folderUI)
         self.ui_asset = QtUiTools.QUiLoader().load(ui_asset, parentWidget=self)
         self.ui.assetLayout.addWidget(self.ui_asset)
         self.ui_asset.com_assetType.addItems(dna.assetTypes)
-        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
+
 
         self.ui.btn_add.clicked.connect(self.addAsset)
         self.ui.btn_add.clicked.connect(self.close)
@@ -52,7 +92,7 @@ class CreateAssset(QtWidgets.QWidget):
         assetName = self.ui_asset.lin_assetName.text()
 
         # Skip creation if asset exists in DB
-        if dna.checkExistsAsset(genesFileAssets, assetName):
+        if dna.checkExistsingEntity(genesFileAssets, assetName):
             print '>> Unable to create asset {}: Asset exists!'.format(assetName)
             return
 
@@ -64,7 +104,7 @@ class CreateAssset(QtWidgets.QWidget):
 
         genesAssets.append(assetData)
 
-        json.dump(genesAssets, open(genesFileAssets, 'w'), indent=4)  # write
+        json.dump(genesAssets, open(genesFileAssets, 'w'), indent=4)
 
         # Send data to PM
         PM.addAssets(catch='')
@@ -80,15 +120,21 @@ class ProjectManager(QtWidgets.QWidget):
         mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.addWidget(self.ui)
         self.setLayout(mainLayout)
-        self.resize(800, 400)  # resize window
+        self.resize(960, 400)  # resize window
         self.setWindowTitle('{} Project Manager'.format(os.environ['ROOT'].split('/')[-1]))  # Title Main window
+        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
+
 
         # Asset UI
         ui_asset = "{}/projectManager_asset.ui".format(dna.folderUI)
         self.ui_asset = QtUiTools.QUiLoader().load(ui_asset, parentWidget=self)
         self.ui.assetLayout.addWidget(self.ui_asset)
         self.ui_asset.com_assetType.addItems(dna.assetTypes)
-        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
+
+        # Shot UI
+        ui_shot = "{}/projectManager_shot.ui".format(dna.folderUI)
+        self.ui_shot = QtUiTools.QUiLoader().load(ui_shot, parentWidget=self)
+        self.ui.shotLayout.addWidget(self.ui_shot)
 
         # Fill UI
         self.poulateAssets()
@@ -99,9 +145,9 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui.lis_shots.itemClicked.connect(self.displayShotProperties)
         self.ui.lis_assets.itemClicked.connect(self.displayAssetProperties)
 
-        #self.ui.btn_shotsAdd.clicked.connect(self.addShots)
         self.ui.btn_assetAdd.clicked.connect(self.addAssets)
         self.ui.btn_assetDel.clicked.connect(self.delAssets)
+        self.ui.btn_seqAdd.clicked.connect(self.addSequences)
 
 
     def poulateAssets(self):
@@ -112,6 +158,7 @@ class ProjectManager(QtWidgets.QWidget):
 
     def poulateSequences(self):
         '''Add Sequence data to UI'''
+        self.ui.lis_seq.clear()
         for sequence in genesSequences:
             self.ui.lis_seq.addItem(sequence['code'])
 
@@ -131,8 +178,28 @@ class ProjectManager(QtWidgets.QWidget):
             self.ui.lis_shots.addItem(shot['code'])
 
     def displayShotProperties(self, shot):
+
         shotCode = shot.text()
-        self.ui.lin_shotName.setText(shotCode)
+        shotNumber = shotCode[-3:]
+        sequenceCode = self.ui.lis_seq.selectedItems()[0].text()
+        dataShot = dna.getShotData(sequenceCode, shotNumber, genesShots)
+
+        # Get list of shot sequences
+        listSequences = []
+        for seq in genesSequences:
+            listSequences.append(seq['code'])
+
+        # Get list of shots assets
+        listAssets = []
+        for asset in genesAssets:
+            listAssets.append(asset['code'])
+
+        # Fill UI with Shot data
+        self.ui_shot.com_shotSequence.clear()
+        self.ui_shot.lis_assets.clear()
+        self.ui_shot.lin_shotName.setText(shotCode)
+        self.ui_shot.com_shotSequence.addItems(listSequences)
+        self.ui_shot.lis_assets.addItems(listAssets)
 
     def displayAssetProperties(self, asset):
         assetCode = asset.text()
@@ -147,8 +214,8 @@ class ProjectManager(QtWidgets.QWidget):
     def addAssets(self, catch=None):
         '''Add asset to database'''
         if catch == None:
-            AS = CreateAssset()
-            AS.show()
+            CA = CreateAssset()
+            CA.show()
         else: # After closing Add Asset window
             # Reload genes
             global genesAssets
@@ -172,10 +239,16 @@ class ProjectManager(QtWidgets.QWidget):
 
     # TO DNA
 
-
-
-
-
+    def addSequences(self, catch=None):
+        if catch == None:
+            CS = CreateSequences()
+            CS.show()
+        else: # After closing Add Asset window
+            # Reload genes
+            global genesSequences
+            genesSequences = dna.loadGenes(genesFileSequences)
+            # Repopulate Asset
+            self.poulateSequences()
 
 
 # Create Tool instance

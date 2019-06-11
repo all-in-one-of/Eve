@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>288</width>
-    <height>365</height>
+    <width>308</width>
+    <height>67</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QTableWidget" name="tab_seq"/>
+    <widget class="QLineEdit" name="lin_seqs"/>
    </item>
    <item>
     <widget class="QSplitter" name="splitter">
@@ -24,12 +24,7 @@
      </property>
      <widget class="QPushButton" name="btn_add">
       <property name="text">
-       <string>Add Sequence</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="btn_del">
-      <property name="text">
-       <string>Del Sequence</string>
+       <string>Create Sequences</string>
       </property>
      </widget>
     </widget>

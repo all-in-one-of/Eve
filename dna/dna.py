@@ -104,20 +104,22 @@ renderSettings = {
 }
 
 # TEMPLATES
-sequenceTemplate = {"name": ""}
+sequenceTemplate = {"code": "",
+                    "shots": []}
 
 shotTemplate = {"code": "",
                 "sg_cut_out": 0,
                 "sg_sequence": {},
                 "assets": [],
-                "fxs": [],
-                "description": "Template shot"}
+                "description": ""}
 
 assetTemplate = {"code": "",
                  "sg_asset_type": "",
                  "hda_name": "",
-                 "materials": {},
-                 "lights": {}}
+                 "hda_version": "",
+                 "description": "",
+                 "materials": [],
+                 "lights": []}
 
 # FILE PATH (STRING) MANIPULATIONS
 # File Naming convention for filePath:
@@ -416,16 +418,16 @@ def buildRenderSequencePath(scenePath=None):
 def loadGenes(genesFile):
     return json.load(open(genesFile))
 
-def checkExistsAsset(genesFileAssets, assetName):
+def checkExistsingEntity(genesFile, name):
     '''
-    Check if asset with provided name exist in database
-    :param assetName:
+    Check if entity (asset, shot, sequence) with provided name exist in database
+    :param name:
     :return:
     '''
 
-    genesAssets = loadGenes(genesFileAssets)
-    for asset in genesAssets:
-        if asset['code'] == assetName:
+    genes = loadGenes(genesFile)
+    for asset in genes:
+        if asset['code'] == name:
             return True
 
 def deleteAssets(genesFileAssets, assetNames):
@@ -436,7 +438,6 @@ def deleteAssets(genesFileAssets, assetNames):
             genesAssetFiltered.append(asset)
 
     json.dump(genesAssetFiltered, open(genesFileAssets, 'w'), indent=4)
-
 
 def getShotData(sequenceNumber, shotNumber, genesShots):
     '''
@@ -484,10 +485,10 @@ def getAssetsDataByShot(shotData, genesAssets):
             if assetData['code'] == asset['name']:
                 assetsData.append(assetData)
     # Get FXs
-    for FX in shotData['fxs']:
-        for assetData in genesAssets:
-            if assetData['code'] == FX['name']:
-                assetsData.append(assetData)
+    #for FX in shotData['fxs']:
+        #for assetData in genesAssets:
+            #if assetData['code'] == FX['name']:
+                #assetsData.append(assetData)
 
     return assetsData
 
