@@ -147,6 +147,7 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui.btn_assetAdd.clicked.connect(self.addAssets)
         self.ui.btn_assetDel.clicked.connect(self.delAssets)
         self.ui.btn_seqAdd.clicked.connect(self.addSequences)
+        self.ui.btn_seqDel.clicked.connect(self.delSequences)
 
 
     def poulateAssets(self):
@@ -229,7 +230,7 @@ class ProjectManager(QtWidgets.QWidget):
         for asset in selectedAssets:
             assetNames.append(asset.text())
 
-        dna.deleteAssets(genesFileAssets, assetNames)
+        dna.deleteEntity(genesFileAssets, assetNames)
 
         global genesAssets
         genesAssets = dna.loadGenes(genesFileAssets)
@@ -246,6 +247,20 @@ class ProjectManager(QtWidgets.QWidget):
             genesSequences = dna.loadGenes(genesFileSequences)
             # Repopulate Asset
             self.poulateSequences()
+
+    def delSequences(self):
+        selectedSequences = self.ui.lis_seq.selectedItems()
+
+        sequenceNames = []
+        for seq in selectedSequences:
+            sequenceNames.append(seq.text())
+
+        dna.deleteEntity(genesFileSequences, sequenceNames)
+
+        global genesSequences
+        genesSequences = dna.loadGenes(genesFileSequences)
+        # Repopulate Asset
+        self.poulateSequences()
 
 
 # Create Tool instance

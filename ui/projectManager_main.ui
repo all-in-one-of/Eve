@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>960</width>
-    <height>400</height>
+    <height>451</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -51,9 +51,6 @@
        </widget>
       </item>
      </layout>
-     <zorder>listWidget</zorder>
-     <zorder>lis_assets</zorder>
-     <zorder>splitter</zorder>
     </widget>
    </item>
    <item>
@@ -114,6 +111,9 @@
           <height>80</height>
          </size>
         </property>
+        <property name="selectionMode">
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
        </widget>
       </item>
       <item>
@@ -134,7 +134,11 @@
        </widget>
       </item>
       <item>
-       <widget class="QListWidget" name="lis_shots"/>
+       <widget class="QListWidget" name="lis_shots">
+        <property name="selectionMode">
+         <enum>QAbstractItemView::ExtendedSelection</enum>
+        </property>
+       </widget>
       </item>
       <item>
        <widget class="QSplitter" name="splitter_3">

@@ -430,14 +430,20 @@ def checkExistsingEntity(genesFile, name):
         if asset['code'] == name:
             return True
 
-def deleteAssets(genesFileAssets, assetNames):
-    genesAssets = loadGenes(genesFileAssets)
-    genesAssetFiltered = []
-    for asset in genesAssets:
-        if not asset['code'] in assetNames:
-            genesAssetFiltered.append(asset)
+def deleteEntity(genesFile, names):
+    '''
+    Delete entity (asset, shot, sequence) from database
+    :param genesFile:
+    :param names:
+    :return:
+    '''
+    genes = loadGenes(genesFile)
+    genesFiltered = []
+    for asset in genes:
+        if not asset['code'] in names:
+            genesFiltered.append(asset)
 
-    json.dump(genesAssetFiltered, open(genesFileAssets, 'w'), indent=4)
+    json.dump(genesFiltered, open(genesFile, 'w'), indent=4)
 
 def getShotData(sequenceNumber, shotNumber, genesShots):
     '''
