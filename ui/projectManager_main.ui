@@ -75,6 +75,13 @@
        <layout class="QVBoxLayout" name="assetLayout"/>
       </item>
       <item>
+       <widget class="QPushButton" name="btn_saveAsset">
+        <property name="text">
+         <string>Save Asset Edits</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="verticalSpacer">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
@@ -102,13 +109,6 @@
           <string>OpenHip</string>
          </property>
         </widget>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btn_saveAsset">
-        <property name="text">
-         <string>Save Asset Edits</string>
-        </property>
        </widget>
       </item>
      </layout>
@@ -199,6 +199,13 @@
        <layout class="QVBoxLayout" name="shotLayout"/>
       </item>
       <item>
+       <widget class="QPushButton" name="btn_saveShot">
+        <property name="text">
+         <string>Save Shot Edits</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="verticalSpacer_2">
         <property name="orientation">
          <enum>Qt::Vertical</enum>
@@ -243,13 +250,6 @@
           <string>Open Anim Hip</string>
          </property>
         </widget>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btn_saveShot">
-        <property name="text">
-         <string>Save Shot Edits</string>
-        </property>
        </widget>
       </item>
      </layout>

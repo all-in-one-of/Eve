@@ -108,7 +108,7 @@ sequenceTemplate = {"code": "",
                     "shots": []}
 
 shotTemplate = {"code": "",
-                "sg_cut_out": 0,
+                "sg_cut_out": 125,
                 "sg_sequence": {},
                 "assets": [],
                 "description": ""}
@@ -437,7 +437,7 @@ def checkExistsingEntity(genesFile, name, sequenceNumber=None):
                 if shot['sg_sequence']['name'] == sequenceNumber:
                     return True
 
-def deleteEntity(genesFile, names):
+def deleteEntity(genesFile, names, sequenceNumber=None):
     '''
     Delete entity (asset, shot, sequence) from database
     :param genesFile:
@@ -446,9 +446,18 @@ def deleteEntity(genesFile, names):
     '''
     genes = loadGenes(genesFile)
     genesFiltered = []
-    for asset in genes:
-        if not asset['code'] in names:
-            genesFiltered.append(asset)
+
+    # Assets and Sequences
+    if not sequenceNumber:
+        for entity in genes:
+            if not entity['code'] in names:
+                genesFiltered.append(entity)
+    # Shots
+    else:
+        for shot in genes:
+            if not shot['code'] in names:
+                if not shot['sg_sequence']['name'] == sequenceNumber:
+                    genesFiltered.append(shot)
 
     json.dump(genesFiltered, open(genesFile, 'w'), indent=4)
 

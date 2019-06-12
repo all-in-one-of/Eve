@@ -242,7 +242,6 @@ class CreateScene(QtWidgets.QWidget):
             CAM.setPosition([0, -dna.nodeDistance_y*2])
             dna.setCameraParameters(CAM)
 
-
 # Create CS object
 CS = CreateScene()
 
