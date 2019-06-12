@@ -43,21 +43,18 @@ class CreateSequences(QtWidgets.QWidget):
 
     def addSequences(self):
 
-        print genesSequences
 
         listSeq = self.ui.lin_seqs.text()
         for sequenceName in listSeq.split(' '):
-            print sequenceName
+
             if dna.checkExistsingEntity(genesFileSequences, sequenceName):
                 print '>> Unable to create sequence {}: Sequence exists!'.format(sequenceName)
                 continue
 
-            sequenceData = dna.sequenceTemplate
+            sequenceData = dict(dna.sequenceTemplate)
             sequenceData['code'] = sequenceName
-
             genesSequences.append(sequenceData)
 
-        print genesSequences
         json.dump(genesSequences, open(genesFileSequences, 'w'), indent=4)
         PM.addSequences(catch='')
 
