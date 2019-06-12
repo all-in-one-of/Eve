@@ -56,7 +56,7 @@ class LinkAssets(QtWidgets.QWidget):
         for asset in self.ui.lis_assets.selectedItems():
             listAssets.append(asset.text())
         PM.linkAsset(listAssets)
-        print genesShots
+
 class CreateShot(QtWidgets.QWidget):
     '''
     Add shot entity to the database
@@ -470,6 +470,14 @@ class ProjectManager(QtWidgets.QWidget):
         :param catch:
         :return:
         '''
+
+        sequenceNumber = self.ui_shot.com_shotSequence.currentText()
+        shotNumber = self.ui_shot.lin_shotName.text()
+
+        if sequenceNumber == '':
+            print '>> Select shot to link assets!'
+            return
+
         if not catch:
             # Launch Link Window
             LA = LinkAssets()
@@ -477,41 +485,52 @@ class ProjectManager(QtWidgets.QWidget):
         else:
             # Add assets to the asset list of shot
             listAssets = catch
-            sequenceNumber = self.ui_shot.com_shotSequence.currentText()
-            shotNumber = self.ui_shot.lin_shotName.text()
+
+            # Get existing assets and make new asset list
             shotData = dna.getShotData(sequenceNumber, shotNumber, genesShots)
-            listShotAssetsSRC = shotData['assets']
+            listShotAssetsNEW = list(shotData['assets']) # list() to break connection to shotGenes
+            for asset in listAssets:
+                # Check if asset already in list
+                if not any(i['code'] == asset for i in listShotAssetsNEW):
+                    listShotAssetsNEW.append({"code": "{}".format(asset)})
+            # Add new list to UI
 
-            if sequenceNumber and shotNumber:
-                for asset in listAssets:
-                    listShotAssetsSRC.append({"code": "{}".format(asset)})
+            self.ui_shot.lis_assets.clear()
+            for asset in listShotAssetsNEW:
+                self.ui_shot.lis_assets.addItem(asset['code'])
+                print '>> Assets linked: {} >> E{}_S{}'.format(asset['code'], sequenceNumber, shotNumber)
 
-                self.displayShotProperties(shotNumber)
-                # print '>> Assets linked: {} >> E{}_S{}'.format(listAssets, sequenceNumber, shotNumber)
-
-            else:
-                print '>> Select shot to link assets!'
+            # self.displayShotProperties(shotNumber)
+            # print '>> Assets linked: {} >> E{}_S{}'.format(listAssets, sequenceNumber, shotNumber)
 
 
     def saveShotEdits(self):
+        ''' Get shot data from UI and populate it to a database '''
         sequenceNumber = self.ui_shot.com_shotSequence.currentText()
         shotNumber = self.ui_shot.lin_shotName.text()
+        frameEnd = self.ui_shot.lin_frameEnd.text()
+        description = self.ui_shot.lin_description.text()
+        assets = []
+        for index in xrange(self.ui_shot.lis_assets.count()):
+            assetName = self.ui_shot.lis_assets.item(index).text()
+            assets.append({"code": "{}".format(assetName)})
 
-        # Update shot data
         genesShotsNEW = []
-        print genesShots
+
         for shotData in genesShots:
             if shotData['code'] == 'SHOT_{}'.format(shotNumber):
                 if shotData['sg_sequence']['name'] == sequenceNumber:
                     # Update data
-                    shotData['sg_cut_out'] = self.ui_shot.lin_frameEnd.text()
+                    shotData['sg_cut_out'] = frameEnd
+                    shotData['description'] = description
+                    shotData['assets'] = assets
                     genesShotsNEW.append(shotData)
                 else:
                     genesShotsNEW.append(shotData)
             else:
                 genesShotsNEW.append(shotData)
 
-        print genesShotsNEW
+
         json.dump(genesShotsNEW, open(genesFileShots, 'w'), indent=4)
 
         print 'Shot E{}-S{} saved!'.format(sequenceNumber, shotNumber)
