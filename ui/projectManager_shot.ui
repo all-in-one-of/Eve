@@ -15,31 +15,6 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QSplitter" name="splitter_4">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <widget class="QLabel" name="label">
-      <property name="minimumSize">
-       <size>
-        <width>70</width>
-        <height>0</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>70</width>
-        <height>16777215</height>
-       </size>
-      </property>
-      <property name="text">
-       <string>Name </string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="lin_shotName"/>
-    </widget>
-   </item>
-   <item>
     <widget class="QSplitter" name="splitter_9">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
@@ -62,6 +37,31 @@
       </property>
      </widget>
      <widget class="QComboBox" name="com_shotSequence"/>
+    </widget>
+   </item>
+   <item>
+    <widget class="QSplitter" name="splitter_4">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <widget class="QLabel" name="label">
+      <property name="minimumSize">
+       <size>
+        <width>70</width>
+        <height>0</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>70</width>
+        <height>16777215</height>
+       </size>
+      </property>
+      <property name="text">
+       <string>SHOT_</string>
+      </property>
+     </widget>
+     <widget class="QLineEdit" name="lin_shotName"/>
     </widget>
    </item>
    <item>

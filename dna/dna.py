@@ -418,7 +418,7 @@ def buildRenderSequencePath(scenePath=None):
 def loadGenes(genesFile):
     return json.load(open(genesFile))
 
-def checkExistsingEntity(genesFile, name):
+def checkExistsingEntity(genesFile, name, sequenceNumber=None):
     '''
     Check if entity (asset, shot, sequence) with provided name exist in database
     :param name:
@@ -426,9 +426,16 @@ def checkExistsingEntity(genesFile, name):
     '''
 
     genes = loadGenes(genesFile)
-    for asset in genes:
-        if asset['code'] == name:
-            return True
+
+    if not sequenceNumber: # check asset and sequence
+        for entity in genes:
+            if entity['code'] == name:
+                return True
+    else: # check shot
+        for shot in genes:
+            if shot['code'] == 'SHOT_{}'.format(name):
+                if shot['sg_sequence']['name'] == sequenceNumber:
+                    return True
 
 def deleteEntity(genesFile, names):
     '''
