@@ -142,7 +142,7 @@
        <string>+</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pushButton_2">
+     <widget class="QPushButton" name="btn_delShotAsset">
       <property name="maximumSize">
        <size>
         <width>20</width>

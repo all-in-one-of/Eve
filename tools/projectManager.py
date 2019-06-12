@@ -12,7 +12,6 @@ from PySide2 import QtCore, QtUiTools, QtWidgets
 import dna
 reload(dna)
 
-
 # Get environment data
 rootProject = os.environ['ROOT']
 genesFileAssets = dna.genesFileAssets.format(rootProject)
@@ -274,6 +273,7 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui.btn_shotsDel.clicked.connect(self.delShots)
 
         self.ui_shot.btn_addShotAsset.clicked.connect(self.linkAsset)
+        self.ui_shot.btn_delShotAsset.clicked.connect(self.unlinkAsset)
 
     def poulateAssets(self):
         '''Add Asset data to UI'''
@@ -503,6 +503,8 @@ class ProjectManager(QtWidgets.QWidget):
             # self.displayShotProperties(shotNumber)
             # print '>> Assets linked: {} >> E{}_S{}'.format(listAssets, sequenceNumber, shotNumber)
 
+    def unlinkAsset(self):
+        print 'Unlink!'
 
     def saveShotEdits(self):
         ''' Get shot data from UI and populate it to a database '''
