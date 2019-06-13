@@ -294,6 +294,8 @@ def buildPathLatestVersion(filePath):
     Get filePath, create new filePath with a latest available version in fileName
     '''
 
+    #print 'dna.buildPathLatestVersion [filePath] = {}'.format(filePath)
+
     # Disassemble file path
     filePathData = analyzeFliePath(filePath)
     fileLocation= filePathData['fileLocation']
@@ -304,7 +306,7 @@ def buildPathLatestVersion(filePath):
     fileVersionLatest = extractLatestVersionFile(listExisted)
     filePathLatestVersion = '{0}{1}_{2}.{3}'.format(fileLocation, fileCode, fileVersionLatest, fileExtension)
 
-    # print 'dna.buildPathLatestVersion [filePathLatestVersion] = {}'.format(filePathLatestVersion)
+    #print 'dna.buildPathLatestVersion [filePathLatestVersion] = {}'.format(filePathLatestVersion)
 
     return filePathLatestVersion
 
@@ -558,7 +560,7 @@ def getAssetDataByName(genesAssets, assetCode):
         if asset['code'] == assetCode:
             return asset
 
-def getShotGene(sequenceNumber, shotNumber, genesShots, genesAssets):
+def getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
     '''
 
     Pull all asset and shot data from the database during one call:
@@ -601,7 +603,6 @@ def getShotGene(sequenceNumber, shotNumber, genesShots, genesAssets):
         fxData = getAssetDataByType(assetsData, 'FX')
 
         shotGene['shotData'] = shotData
-        # shotGene['assetsData'] = assetsData
         shotGene['environmentData'] = environmentData
         shotGene['charactersData'] = charactersData
         shotGene['fxData'] = fxData
