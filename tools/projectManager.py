@@ -2,7 +2,10 @@
 Create and manage assets and shots in project
 '''
 
+# TODO: Add sequence property window: edit linked shots
 # TODO: split list of asset to categories: char, env, prop, fx
+# TODO: When delete sequence ask to delete all sequence shots ??
+# (del sequence 020 (which has shot 010), create seq 020, try to create shot 010- error- exists)
 
 import hou
 import json
@@ -109,25 +112,23 @@ def getShotDataUI(ui_shot):
 
 def getAssetDataUI(ui_asset):
     '''
-    Get shot data values from shot UI
+    Get ASSET data values from shot UI
     :param ui_shot:
     :return:
     '''
 
-    # Get shot data values from UI
-    sequenceNumber = ui_shot.com_shotSequence.currentText()
-    shotNumber = ui_shot.lin_shotName.text()
-    frameEnd = ui_shot.lin_frameEnd.text()
-    description = ui_shot.lin_description.text()
-    assets = createListShotAssets(ui_shot)
+    # Get ASSET data values from UI
+    assetName = ui_asset.lin_assetName.text()
+    assetType = ui_asset.com_assetType.currentText()
+    hda_name = ui_asset.lin_assetHDA.text()
+    description = ui_asset.lin_description.text()
 
-    shotDataUI = {'sequenceNumber': sequenceNumber,
-                 'shotNumber': shotNumber,
-                 'frameEnd': frameEnd,
-                 'description': description,
-                 'assets': assets}
+    sassetDataUI = {'assetName': assetName,
+                    'assetType': assetType,
+                    'hda_name': hda_name,
+                    'description': description}
 
-    return shotDataUI
+    return sassetDataUI
 
 def updatShotData(shotData, shotDataUI):
     '''
@@ -141,6 +142,19 @@ def updatShotData(shotData, shotDataUI):
     shotData['assets'] = shotDataUI['assets']
 
     return shotData
+
+def updatAssetData(assetData, assetDataUI):
+    '''
+    Update shot data with values from UI
+    :return:
+    '''
+
+    assetData['code'] = assetDataUI['assetName']
+    assetData['sg_asset_type'] = assetDataUI['assetType']
+    assetData['hda_name'] = assetDataUI['hda_name']
+    assetData['description'] = assetDataUI['description']
+
+    return assetData
 
 class LinkAssets(QtWidgets.QWidget):
     '''
@@ -237,7 +251,7 @@ class CreateShot(QtWidgets.QWidget):
         # Create empty shot data dictionary
         shotData = dna.shotTemplate
         # Update shot data with UI values
-        updatShotData(shotData, shotDataUI)
+        shotData = updatShotData(shotData, shotDataUI)
 
         # Update SHOT genes
         genesShots.append(shotData)
@@ -331,12 +345,9 @@ class CreateAssset(QtWidgets.QWidget):
         :return:
         '''
 
-        
-
-
-
-
-        assetName = self.ui_asset.lin_assetName.text()
+        # Get asset data from UI
+        assetDataUI = getAssetDataUI(self.ui_asset)
+        assetName = assetDataUI['assetName']
 
         # Skip creation if asset exists in DB
         if dna.checkExistsingEntity(genesFileAssets, assetName):
@@ -344,11 +355,7 @@ class CreateAssset(QtWidgets.QWidget):
             return
 
         assetData = dna.assetTemplate
-
-        assetData['code'] = assetName
-        assetData['sg_asset_type'] = self.ui_asset.com_assetType.currentText()
-        assetData['hda_name'] = self.ui_asset.lin_assetHDA.text()
-
+        assetData = updatAssetData(assetData, assetDataUI)
         genesAssets.append(assetData)
 
         json.dump(genesAssets, open(genesFileAssets, 'w'), indent=4)
@@ -401,6 +408,7 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui.lis_assets.itemSelectionChanged.connect(self.changeSelectionAsset)
 
         self.ui.btn_saveShot.clicked.connect(self.saveShotEdits)
+        self.ui.btn_saveAsset.clicked.connect(self.saveAssettEdits)
         self.ui.btn_assetAdd.clicked.connect(self.addAsset)
         self.ui.btn_assetDel.clicked.connect(self.delAssets)
         self.ui.btn_seqAdd.clicked.connect(self.addSequences)
@@ -515,14 +523,15 @@ class ProjectManager(QtWidgets.QWidget):
 
         self.ui_asset.show()
 
-        assetCode = asset.text()
-        dataAsset = dna.getAssetDataByName(genesAssets, assetCode)
+        assetName = asset.text()
+        dataAsset = dna.getAssetDataByName(genesAssets, assetName)
 
-        # Fill UI with asset data
-        self.ui_asset.lin_assetName.setText(assetCode)
+        # Fill UI with asset data from database
+        self.ui_asset.lin_assetName.setText(assetName)
         index = self.ui_asset.com_assetType.findText(dataAsset['sg_asset_type'], QtCore.Qt.MatchFixedString)
         self.ui_asset.com_assetType.setCurrentIndex(index)
         self.ui_asset.lin_assetHDA.setText(dataAsset['hda_name'])
+        self.ui_asset.lin_description.setText(dataAsset['description'])
 
     def addAsset(self, catch=None):
         '''Add asset to database'''
@@ -687,6 +696,7 @@ class ProjectManager(QtWidgets.QWidget):
         sequenceNumber = shotDataUI['sequenceNumber']
         shotNumber = shotDataUI['shotNumber']
 
+        # Find current shot in DB and update its values
         genesShotsNEW = []
         for shotData in genesShots:
             if shotData['code'] == 'SHOT_{}'.format(shotNumber):
@@ -699,10 +709,35 @@ class ProjectManager(QtWidgets.QWidget):
             else:
                 genesShotsNEW.append(shotData)
 
-
+        # Save updated shots in DB
         json.dump(genesShotsNEW, open(genesFileShots, 'w'), indent=4)
 
-        print 'Shot E{}-S{} saved!'.format(sequenceNumber, shotNumber)
+        print '>> Shot E{}-S{} updated!'.format(sequenceNumber, shotNumber)
+
+    def saveAssettEdits(self):
+        '''
+        Get asset data from UI and populate it to database
+        :return:
+        '''
+        # Get ASSET data values from UI
+        assetDataUI = getAssetDataUI(self.ui_asset)
+
+        # Find current ASSET in DB and update its values
+        genesAssetsNEW = []
+        for assetData in genesAssets:
+            if assetData['code'] == assetDataUI['assetName']:
+                    # Update data values
+                    assetData = updatAssetData(assetData, assetDataUI)
+                    genesAssetsNEW.append(assetData)
+            else:
+                genesAssetsNEW.append(assetData)
+
+        # Save updated shots in DB
+        json.dump(genesAssetsNEW, open(genesFileAssets, 'w'), indent=4)
+
+        print '>> Asset {} updated!'.format(assetDataUI['assetName'])
+
+
 
 # Create Tool instance
 PM = ProjectManager()
