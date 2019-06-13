@@ -22,7 +22,7 @@ genesSequences = dna.loadGenes(genesFileSequences)
 genesShots = dna.loadGenes(genesFileShots)
 
 
-def _linkAsset(ui_shot, catch=None):
+def linkAsset(ui_shot, catch=None):
     '''
     Add asset names to a list of shot assets in UI (don1t populate to database)
     :param catch:
@@ -62,6 +62,85 @@ def _linkAsset(ui_shot, catch=None):
             ui_shot.lis_assets.addItem(asset['code'])
             print '>> Assets linked: {} >> E{}_S{}'.format(asset['code'], sequenceNumber, shotNumber)
 
+def unlinkAsset(ui_shot):
+    '''
+    Remove selected asset from shot properties panel (don`t populate to database)
+    :return:
+    '''
+    selectedAssets = ui_shot.lis_assets.selectedItems()
+
+    for asset in selectedAssets:
+        ui_shot.lis_assets.takeItem(ui_shot.lis_assets.row(asset))
+
+def createListShotAssets(ui_shot):
+    '''
+    Create list of shot assets dictionaries
+    for 'assets' key in shot genes dictionary
+    :return:
+    '''
+    assets = []
+    for index in xrange(ui_shot.lis_assets.count()):
+        assetName = ui_shot.lis_assets.item(index).text()
+        assets.append({"code": "{}".format(assetName)})
+
+    return assets
+
+def getShotDataUI(ui_shot):
+    '''
+    Get shot data values from shot UI
+    :param ui_shot:
+    :return:
+    '''
+
+    # Get shot data values from UI
+    sequenceNumber = ui_shot.com_shotSequence.currentText()
+    shotNumber = ui_shot.lin_shotName.text()
+    frameEnd = ui_shot.lin_frameEnd.text()
+    description = ui_shot.lin_description.text()
+    assets = createListShotAssets(ui_shot)
+
+    shotDataUI = {'sequenceNumber': sequenceNumber,
+                 'shotNumber': shotNumber,
+                 'frameEnd': frameEnd,
+                 'description': description,
+                 'assets': assets}
+
+    return shotDataUI
+
+def getAssetDataUI(ui_asset):
+    '''
+    Get shot data values from shot UI
+    :param ui_shot:
+    :return:
+    '''
+
+    # Get shot data values from UI
+    sequenceNumber = ui_shot.com_shotSequence.currentText()
+    shotNumber = ui_shot.lin_shotName.text()
+    frameEnd = ui_shot.lin_frameEnd.text()
+    description = ui_shot.lin_description.text()
+    assets = createListShotAssets(ui_shot)
+
+    shotDataUI = {'sequenceNumber': sequenceNumber,
+                 'shotNumber': shotNumber,
+                 'frameEnd': frameEnd,
+                 'description': description,
+                 'assets': assets}
+
+    return shotDataUI
+
+def updatShotData(shotData, shotDataUI):
+    '''
+    Update shot data with values from UI
+    :return:
+    '''
+    shotData['code'] = 'SHOT_{}'.format(shotDataUI['shotNumber'])
+    shotData['sg_sequence'] = {"name": "{}".format(shotDataUI['sequenceNumber'])}
+    shotData['sg_cut_out'] = shotDataUI['frameEnd']
+    shotData['description'] = shotDataUI['description']
+    shotData['assets'] = shotDataUI['assets']
+
+    return shotData
 
 class LinkAssets(QtWidgets.QWidget):
     '''
@@ -97,7 +176,7 @@ class LinkAssets(QtWidgets.QWidget):
         listAssets = []
         for asset in self.ui.lis_assets.selectedItems():
             listAssets.append(asset.text())
-        _linkAsset(self.ui_shot, listAssets)
+        linkAsset(self.ui_shot, listAssets)
 
 class CreateShot(QtWidgets.QWidget):
     '''
@@ -135,7 +214,8 @@ class CreateShot(QtWidgets.QWidget):
         # Functionality
         self.ui.btn_add.clicked.connect(self.addShot)
         self.ui.btn_add.clicked.connect(self.close)
-        self.ui_shot.btn_addShotAsset.clicked.connect(lambda: _linkAsset(self.ui_shot))
+        self.ui_shot.btn_addShotAsset.clicked.connect(lambda: linkAsset(self.ui_shot))
+        self.ui_shot.btn_delShotAsset.clicked.connect(lambda: unlinkAsset(self.ui_shot))
 
     def addShot(self):
         '''
@@ -143,26 +223,27 @@ class CreateShot(QtWidgets.QWidget):
         :return:
         '''
 
-        shotNumber = self.ui_shot.lin_shotName.text()
-        sequenceNumber = self.ui_shot.com_shotSequence.currentText()
+        # Get shot data from UI
+        shotDataUI = getShotDataUI(self.ui_shot)
+        sequenceNumber = shotDataUI['sequenceNumber']
+        shotNumber = shotDataUI['shotNumber']
 
-        # Skip creation if asset exists in DB
+
+        # Skip creation if its exists in DB
         if dna.checkExistsingEntity(genesFileShots, shotNumber, sequenceNumber):
-            print '>> Unable to create {0}-SHOT_{1}: Shot exists!'.format(sequenceNumber, shotNumber)
+            print '>> Unable to create E{0}-S{1}: Shot exists!'.format(sequenceNumber, shotNumber)
             return
 
+        # Create empty shot data dictionary
         shotData = dna.shotTemplate
-
-        shotData['code'] = 'SHOT_{}'.format(shotNumber)
-        sequence = {"name": "{}".format(self.ui_shot.com_shotSequence.currentText())}
-        shotData['sg_sequence'] = sequence
-        #shotData['hda_name'] = self.ui_shot.lin_assetHDA.text()
+        # Update shot data with UI values
+        updatShotData(shotData, shotDataUI)
 
         # Update SHOT genes
         genesShots.append(shotData)
         json.dump(genesShots, open(genesFileShots, 'w'), indent=4)
+
         # Update SEQUENCE genes
-        # genesSequences = [{u'code': u'010', u'shots': [{u'code': u'SHOT_010'}]}, {u'code': u'020', u'shots': []}]
         for seqData in genesSequences:
             if seqData['code'] == sequenceNumber:
                 listShots = seqData['shots']
@@ -232,7 +313,7 @@ class CreateAssset(QtWidgets.QWidget):
         mainLayout.addWidget(self.ui)
         self.setLayout(mainLayout)
         self.resize(320, 120)  # resize window
-        self.setWindowTitle('Add Asset')  # Title Main window
+        self.setWindowTitle('Create Asset')  # Title Main window
         self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         ui_asset = "{}/projectManager_asset.ui".format(dna.folderUI)
@@ -249,6 +330,12 @@ class CreateAssset(QtWidgets.QWidget):
         Create asset entity in datatbase
         :return:
         '''
+
+        
+
+
+
+
         assetName = self.ui_asset.lin_assetName.text()
 
         # Skip creation if asset exists in DB
@@ -301,7 +388,7 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui.shotLayout.addWidget(self.ui_shot)
         self.ui_shot.hide()
 
-        # Fill UI
+        # Fill UI with assets and shots from database
         self.poulateAssets()
         self.poulateSequences()
 
@@ -321,8 +408,8 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui.btn_shotsAdd.clicked.connect(self.addShot)
         self.ui.btn_shotsDel.clicked.connect(self.delShots)
 
-        self.ui_shot.btn_addShotAsset.clicked.connect(lambda: _linkAsset(self.ui_shot))
-        self.ui_shot.btn_delShotAsset.clicked.connect(self.unlinkAsset)
+        self.ui_shot.btn_addShotAsset.clicked.connect(lambda: linkAsset(self.ui_shot))
+        self.ui_shot.btn_delShotAsset.clicked.connect(lambda: unlinkAsset(self.ui_shot))
 
     def changeSelectionSeq(self):
         '''Clear list of shots if no sequence selected'''
@@ -490,22 +577,24 @@ class ProjectManager(QtWidgets.QWidget):
 
     def addShot(self, catch=None):
         '''Add shot to database'''
+
         if catch == None:
             # Get first selected SEQ
             selectedSeq = self.ui.lis_seq.selectedItems()
             sequenceNumber = None
             if selectedSeq:
                 sequenceNumber = selectedSeq[0].text()
+
             CS = CreateShot(sequenceNumber)
             CS.show()
         else:
             # After closing Add Shots window
-            # catch = sequenceNumber
+            sequenceNumber = catch
             # Reload genes
             global genesShots
             genesShots = dna.loadGenes(genesFileShots)
             # Repopulate Shots
-            self.poulateShots(catch)
+            self.poulateShots(sequenceNumber)
 
     def delShots(self):
         selectedShots = self.ui.lis_shots.selectedItems()
@@ -539,7 +628,7 @@ class ProjectManager(QtWidgets.QWidget):
         # Repopulate Shots
         self.poulateShots(sequenceNumber)
 
-    def linkAsset(self, catch=None):
+    def linkAsset_rem(self, catch=None):
         '''
         Add asset names to a list of shot assets in UI (don1t populate to database)
         :param catch:
@@ -578,7 +667,7 @@ class ProjectManager(QtWidgets.QWidget):
             # self.displayShotProperties(shotNumber)
             # print '>> Assets linked: {} >> E{}_S{}'.format(listAssets, sequenceNumber, shotNumber)
 
-    def unlinkAsset(self):
+    def unlinkAsset_rem(self):
         '''
         Remove selected asset from shot properties panel (don`t populate to database)
         :return:
@@ -592,24 +681,18 @@ class ProjectManager(QtWidgets.QWidget):
         '''
         Get shot data from UI and populate it to a database
         '''
-        sequenceNumber = self.ui_shot.com_shotSequence.currentText()
-        shotNumber = self.ui_shot.lin_shotName.text()
-        frameEnd = self.ui_shot.lin_frameEnd.text()
-        description = self.ui_shot.lin_description.text()
-        assets = []
-        for index in xrange(self.ui_shot.lis_assets.count()):
-            assetName = self.ui_shot.lis_assets.item(index).text()
-            assets.append({"code": "{}".format(assetName)})
+
+        # Get shot data values from UI
+        shotDataUI = getShotDataUI(self.ui_shot)
+        sequenceNumber = shotDataUI['sequenceNumber']
+        shotNumber = shotDataUI['shotNumber']
 
         genesShotsNEW = []
-
         for shotData in genesShots:
             if shotData['code'] == 'SHOT_{}'.format(shotNumber):
                 if shotData['sg_sequence']['name'] == sequenceNumber:
-                    # Update data
-                    shotData['sg_cut_out'] = frameEnd
-                    shotData['description'] = description
-                    shotData['assets'] = assets
+                    # Update data values
+                    shotData = updatShotData(shotData, shotDataUI)
                     genesShotsNEW.append(shotData)
                 else:
                     genesShotsNEW.append(shotData)
