@@ -120,10 +120,10 @@ class Warning(QtWidgets.QWidget):
         ui_file.close()
 
         self.parent = parent
-        self.lab_warning = self.window.findChild(QLabel, 'lab_warning')
+        self.lab_warning = self.window.findChild(QtWidgets.QLabel, 'lab_warning')
         self.lab_warning.setText('Project {0} exists!'.format(message))
-        self.btn_proceed = self.window.findChild(QPushButton, 'btn_proceed')
-        self.btn_cancel = self.window.findChild(QPushButton, 'btn_cancel')
+        self.btn_proceed = self.window.findChild(QtWidgets.QPushButton, 'btn_proceed')
+        self.btn_cancel = self.window.findChild(QtWidgets.QPushButton, 'btn_cancel')
 
         # SETUP FUNCTIONALITY
         self.btn_proceed.clicked.connect(self.proceed)
@@ -195,7 +195,7 @@ class ProjectManager(QtWidgets.QWidget):
         '''
         Let user to select project location
         '''
-        self.projectFolder = QFileDialog.getExistingDirectory(self, 'Select folder to store the project', 'C:/').replace('\\', '/')
+        self.projectFolder = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select folder to store the project', 'C:/').replace('\\', '/')
         self.lab_path.setText(self.projectFolder)
         self.buildProjectPath() # Update path in UI
 
@@ -313,7 +313,7 @@ class ProjectManager(QtWidgets.QWidget):
 
         print '>> Folder structure with pipeline files created in {0}/'.format(rootProject)
 
-    def createProject(self, catchWarning = None):
+    def createProject(self, catchWarning=False):
         '''
         Create new project on HDD and in Shotgun:
         :param catchWarning: returned value from Warning class (OK or NO)
@@ -323,8 +323,9 @@ class ProjectManager(QtWidgets.QWidget):
 
         # Create folder structure on HDD with necessary pipeline files
         if os.path.exists(rootProject):
+
             # If project folder already exists
-            if catchWarning == None:
+            if not catchWarning:
                 # Run warning dialog
                 self.warning = Warning(self, rootProject)  # Run SNV window
                 win = self.warning.window.show()

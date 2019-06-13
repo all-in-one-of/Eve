@@ -16,7 +16,7 @@ Here is the list of things you need to have before Eve pipeline will works:
 - Houdini  
 - Python 2.7.5 x 64 (or later version) 
 - pip  
-- PySide
+- PySide2
 
 #### Install Houdini
 Go to [SESI site](https://www.sidefx.com/products/compare/), choose, download and install your Houdini version.
