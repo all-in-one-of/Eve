@@ -4,7 +4,8 @@ EVE - Houdini pipeline for VFX production
 
 Create folder structure for the project and copy pipeline files into it
 
-TBD: open PIPELINE folder after project created
+Release. PySide2 version
+
 '''
 
 # Common modules import
@@ -15,8 +16,7 @@ import subprocess
 import json
 
 # Py Side import
-from PySide.QtGui import *
-from PySide import QtUiTools, QtCore
+from PySide2 import QtUiTools, QtCore, QtWidgets
 
 # COMMON SCRIPT VARIABLES
 rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/')
@@ -104,7 +104,7 @@ FOLDERS = [
 
 
 # WARNING WINDOW
-class Warning(QWidget):
+class Warning(QtWidgets.QWidget):
     '''
     Warning window.
     Show existing project path,
@@ -140,7 +140,7 @@ class Warning(QWidget):
         ProjectManager.createProject(self.parent, 'NO')
 
 # MAIN MODULE
-class ProjectManager(QWidget):
+class ProjectManager(QtWidgets.QWidget):
     '''
     Create Project MAIN MODULE
     Set project name and location in UI, create folder structure, copy pipeline files
@@ -158,14 +158,14 @@ class ProjectManager(QWidget):
         self.window = QtUiTools.QUiLoader().load(ui_file)
         ui_file.close()
 
-        self.act_docs = self.window.findChild(QAction, 'act_docs')
-        self.act_help = self.window.findChild(QAction, 'act_help')
-        self.btn_setFolder = self.window.findChild(QPushButton, 'btn_setFolder')
-        self.lin_name = self.window.findChild(QLineEdit, 'lin_name')
-        self.lab_path = self.window.findChild(QLabel, 'lab_path')
-        self.lin_options = self.window.findChild(QLineEdit, 'lin_options')
-        self.btn_create = self.window.findChild(QPushButton, 'btn_create')
-        self.chb_example = self.window.findChild(QCheckBox, 'chb_example')
+        self.act_docs = self.window.findChild(QtWidgets.QAction, 'act_docs')
+        self.act_help = self.window.findChild(QtWidgets.QAction, 'act_help')
+        self.btn_setFolder = self.window.findChild(QtWidgets.QPushButton, 'btn_setFolder')
+        self.lin_name = self.window.findChild(QtWidgets.QLineEdit, 'lin_name')
+        self.lab_path = self.window.findChild(QtWidgets.QLabel, 'lab_path')
+        self.lin_options = self.window.findChild(QtWidgets.QLineEdit, 'lin_options')
+        self.btn_create = self.window.findChild(QtWidgets.QPushButton, 'btn_create')
+        self.chb_example = self.window.findChild(QtWidgets.QCheckBox, 'chb_example')
 
 
         self.lab_path.setText('C:')
@@ -351,7 +351,7 @@ class ProjectManager(QWidget):
         print '>> Run Houdini with {0}/PREP/PIPELINE/runHoudini.bat and create a magic!'.format(rootProject)
 
 # Run Create Project script
-app = QApplication([])
+app = QtWidgets.QApplication([])
 CP = ProjectManager()
 CP.window.show()
 app.exec_()
