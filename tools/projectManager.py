@@ -21,15 +21,58 @@ genesAssets = dna.loadGenes(genesFileAssets)
 genesSequences = dna.loadGenes(genesFileSequences)
 genesShots = dna.loadGenes(genesFileShots)
 
+
+def _linkAsset(ui_shot, catch=None):
+    '''
+    Add asset names to a list of shot assets in UI (don1t populate to database)
+    :param catch:
+    :return:
+    '''
+
+    sequenceNumber = ui_shot.com_shotSequence.currentText()
+    shotNumber = ui_shot.lin_shotName.text()
+
+    if sequenceNumber == '':
+        print '>> Select shot to link assets!'
+        return
+
+    if not catch:
+        # Launch Link Window
+        LA = LinkAssets(ui_shot)
+        LA.show()
+    else:
+        # Add assets to the asset list of shot
+        listAssets = catch
+
+        # Get existing assets and make new asset list
+        shotData = dna.getShotData(sequenceNumber, shotNumber, genesShots)
+        if shotData:
+            listShotAssetsNEW = list(shotData['assets'])  # list() to break connection to shotGenes
+        else:
+            listShotAssetsNEW = []
+
+        for asset in listAssets:
+            # Check if asset already in list
+            if not any(i['code'] == asset for i in listShotAssetsNEW):
+                listShotAssetsNEW.append({"code": "{}".format(asset)})
+        # Add new list to UI
+
+        ui_shot.lis_assets.clear()
+        for asset in listShotAssetsNEW:
+            ui_shot.lis_assets.addItem(asset['code'])
+            print '>> Assets linked: {} >> E{}_S{}'.format(asset['code'], sequenceNumber, shotNumber)
+
+
 class LinkAssets(QtWidgets.QWidget):
     '''
     Add assets codes to shot UI
     '''
-    def __init__(self):
+    def __init__(self, ui_shot):
         # SETUP UI WINDOW
         super(LinkAssets, self).__init__()
         ui_main = "{}/projectManager_linkAssets.ui".format(dna.folderUI)
         self.ui = QtUiTools.QUiLoader().load(ui_main, parentWidget=self)
+        self.ui_shot = ui_shot
 
         # Setup window properties
         mainLayout = QtWidgets.QVBoxLayout()
@@ -54,7 +97,7 @@ class LinkAssets(QtWidgets.QWidget):
         listAssets = []
         for asset in self.ui.lis_assets.selectedItems():
             listAssets.append(asset.text())
-        PM.linkAsset(listAssets)
+        _linkAsset(self.ui_shot, listAssets)
 
 class CreateShot(QtWidgets.QWidget):
     '''
@@ -72,7 +115,7 @@ class CreateShot(QtWidgets.QWidget):
         mainLayout.addWidget(self.ui)
         self.setLayout(mainLayout)
         self.resize(320, 120)  # resize window
-        self.setWindowTitle('Add Asset')  # Title Main window
+        self.setWindowTitle('Add Shot')  # Title Main window
         self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         ui_shot = "{}/projectManager_shot.ui".format(dna.folderUI)
@@ -92,13 +135,14 @@ class CreateShot(QtWidgets.QWidget):
         # Functionality
         self.ui.btn_add.clicked.connect(self.addShot)
         self.ui.btn_add.clicked.connect(self.close)
-        #self.ui_shot.btn_addShotAsset.clicked.connect(self.linkAsset)
+        self.ui_shot.btn_addShotAsset.clicked.connect(lambda: _linkAsset(self.ui_shot))
 
     def addShot(self):
         '''
         Create shot entity in datatbase
         :return:
         '''
+
         shotNumber = self.ui_shot.lin_shotName.text()
         sequenceNumber = self.ui_shot.com_shotSequence.currentText()
 
@@ -188,7 +232,7 @@ class CreateAssset(QtWidgets.QWidget):
         mainLayout.addWidget(self.ui)
         self.setLayout(mainLayout)
         self.resize(320, 120)  # resize window
-        self.setWindowTitle('Add Shot')  # Title Main window
+        self.setWindowTitle('Add Asset')  # Title Main window
         self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         ui_asset = "{}/projectManager_asset.ui".format(dna.folderUI)
@@ -246,6 +290,7 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui_asset = QtUiTools.QUiLoader().load(ui_asset, parentWidget=self)
         self.ui.assetLayout.addWidget(self.ui_asset)
         self.ui_asset.com_assetType.addItems(dna.assetTypes)
+        self.ui_asset.hide()
 
         # Shot UI
         ui_shot = "{}/projectManager_shot.ui".format(dna.folderUI)
@@ -254,6 +299,7 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui_shot.com_shotSequence.setEnabled(False)
         self.ui_shot.lin_shotName.setEnabled(False)
         self.ui.shotLayout.addWidget(self.ui_shot)
+        self.ui_shot.hide()
 
         # Fill UI
         self.poulateAssets()
@@ -261,8 +307,11 @@ class ProjectManager(QtWidgets.QWidget):
 
         # Functionality
         self.ui.lis_seq.itemClicked.connect(self.poulateShots)
+        self.ui.lis_seq.itemSelectionChanged.connect(self.changeSelectionSeq)
         self.ui.lis_shots.itemClicked.connect(self.displayShotProperties)
+        self.ui.lis_shots.itemSelectionChanged.connect(self.changeSelectionShot)
         self.ui.lis_assets.itemClicked.connect(self.displayAssetProperties)
+        self.ui.lis_assets.itemSelectionChanged.connect(self.changeSelectionAsset)
 
         self.ui.btn_saveShot.clicked.connect(self.saveShotEdits)
         self.ui.btn_assetAdd.clicked.connect(self.addAsset)
@@ -272,8 +321,23 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui.btn_shotsAdd.clicked.connect(self.addShot)
         self.ui.btn_shotsDel.clicked.connect(self.delShots)
 
-        self.ui_shot.btn_addShotAsset.clicked.connect(self.linkAsset)
+        self.ui_shot.btn_addShotAsset.clicked.connect(lambda: _linkAsset(self.ui_shot))
         self.ui_shot.btn_delShotAsset.clicked.connect(self.unlinkAsset)
+
+    def changeSelectionSeq(self):
+        '''Clear list of shots if no sequence selected'''
+        if self.ui.lis_seq.selectedItems() == []:
+            self.ui.lis_shots.clear()
+
+    def changeSelectionShot(self):
+        '''Clear shot properties if no shot selected'''
+        if self.ui.lis_shots.selectedItems() == []:
+            self.ui_shot.hide()
+
+    def changeSelectionAsset(self):
+        '''Clear asset properties if no asset selected'''
+        if self.ui.lis_shots.selectedItems() == []:
+            self.ui_asset.hide()
 
     def poulateAssets(self):
         '''Add Asset data to UI'''
@@ -319,6 +383,8 @@ class ProjectManager(QtWidgets.QWidget):
         :return:
         '''
 
+        self.ui_shot.show()
+
         if type(shot) is unicode:
             shotNumber = shot
         else:
@@ -353,6 +419,15 @@ class ProjectManager(QtWidgets.QWidget):
             self.ui_shot.lis_assets.addItem(asset['code'])
 
     def displayAssetProperties(self, asset):
+        '''
+        Display selected asset properties in UI
+        :param asset:
+        :return:
+        '''
+
+
+        self.ui_asset.show()
+
         assetCode = asset.text()
         dataAsset = dna.getAssetDataByName(genesAssets, assetCode)
 
