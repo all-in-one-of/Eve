@@ -50,3 +50,5 @@ Go to `<projectLocation>/PREP/PIPELINE/`, run Houdini with `runHoudini.bat` and 
 
 You can create a shortcut for bat file, place it in any convenient location (Desktop, for example) to access all your Eve projects easily. 
 
+Once you have your project in place it`s time to create and manage assets and shots:
+[![](https://live.staticflickr.com/65535/48056687948_124c55d2fe_o.gif)](https://live.staticflickr.com/65535/48056687948_124c55d2fe_o.gif)

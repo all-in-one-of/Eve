@@ -24,7 +24,6 @@ genesAssets = dna.loadGenes(genesFileAssets)
 genesSequences = dna.loadGenes(genesFileSequences)
 genesShots = dna.loadGenes(genesFileShots)
 
-
 def linkAsset(ui_shot, catch=None):
     '''
     Add asset names to a list of shot assets in UI (don1t populate to database)
@@ -736,7 +735,6 @@ class ProjectManager(QtWidgets.QWidget):
         json.dump(genesAssetsNEW, open(genesFileAssets, 'w'), indent=4)
 
         print '>> Asset {} updated!'.format(assetDataUI['assetName'])
-
 
 
 # Create Tool instance
