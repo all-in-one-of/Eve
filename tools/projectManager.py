@@ -466,7 +466,7 @@ class ProjectManager(QtWidgets.QWidget):
 
     def linkAsset(self, catch=None):
         '''
-        Add asset names to a list of shot assets in UI (dont populate to database)
+        Add asset names to a list of shot assets in UI (don1t populate to database)
         :param catch:
         :return:
         '''
@@ -504,10 +504,19 @@ class ProjectManager(QtWidgets.QWidget):
             # print '>> Assets linked: {} >> E{}_S{}'.format(listAssets, sequenceNumber, shotNumber)
 
     def unlinkAsset(self):
-        print 'Unlink!'
+        '''
+        Remove selected asset from shot properties panel (don`t populate to database)
+        :return:
+        '''
+        selectedAssets = self.ui_shot.lis_assets.selectedItems()
+
+        for asset in selectedAssets:
+            self.ui_shot.lis_assets.takeItem(self.ui_shot.lis_assets.row(asset))
 
     def saveShotEdits(self):
-        ''' Get shot data from UI and populate it to a database '''
+        '''
+        Get shot data from UI and populate it to a database
+        '''
         sequenceNumber = self.ui_shot.com_shotSequence.currentText()
         shotNumber = self.ui_shot.lin_shotName.text()
         frameEnd = self.ui_shot.lin_frameEnd.text()
