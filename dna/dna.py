@@ -506,7 +506,7 @@ def getAssetsDataByShot(shotData, genesAssets):
     # Get assets
     for asset in shotData['assets']:
         for assetData in genesAssets:
-            if assetData['code'] == asset['name']:
+            if assetData['code'] == asset['code']:
                 assetsData.append(assetData)
     # Get FXs
     #for FX in shotData['fxs']:

@@ -4,7 +4,8 @@ EVE - Houdini pipeline for VFX production
 
 Create folder structure for the project and copy pipeline files into it
 
-Release. PySide2 version
+Release.
+Before switch to pySide2
 
 '''
 
@@ -16,7 +17,8 @@ import subprocess
 import json
 
 # Py Side import
-from PySide2 import QtUiTools, QtCore, QtWidgets
+from PySide.QtGui import *
+from PySide import QtUiTools, QtCore
 
 # COMMON SCRIPT VARIABLES
 rootPipeline = os.path.dirname(os.path.dirname(__file__)).replace('\\','/')
@@ -104,7 +106,7 @@ FOLDERS = [
 
 
 # WARNING WINDOW
-class Warning(QtWidgets.QWidget):
+class Warning(QWidget):
     '''
     Warning window.
     Show existing project path,
@@ -120,10 +122,10 @@ class Warning(QtWidgets.QWidget):
         ui_file.close()
 
         self.parent = parent
-        self.lab_warning = self.window.findChild(QtWidgets.QLabel, 'lab_warning')
+        self.lab_warning = self.window.findChild(QLabel, 'lab_warning')
         self.lab_warning.setText('Project {0} exists!'.format(message))
-        self.btn_proceed = self.window.findChild(QtWidgets.QPushButton, 'btn_proceed')
-        self.btn_cancel = self.window.findChild(QtWidgets.QPushButton, 'btn_cancel')
+        self.btn_proceed = self.window.findChild(QPushButton, 'btn_proceed')
+        self.btn_cancel = self.window.findChild(QPushButton, 'btn_cancel')
 
         # SETUP FUNCTIONALITY
         self.btn_proceed.clicked.connect(self.proceed)
@@ -140,7 +142,7 @@ class Warning(QtWidgets.QWidget):
         ProjectManager.createProject(self.parent, 'NO')
 
 # MAIN MODULE
-class ProjectManager(QtWidgets.QWidget):
+class ProjectManager(QWidget):
     '''
     Create Project MAIN MODULE
     Set project name and location in UI, create folder structure, copy pipeline files
@@ -158,14 +160,14 @@ class ProjectManager(QtWidgets.QWidget):
         self.window = QtUiTools.QUiLoader().load(ui_file)
         ui_file.close()
 
-        self.act_docs = self.window.findChild(QtWidgets.QAction, 'act_docs')
-        self.act_help = self.window.findChild(QtWidgets.QAction, 'act_help')
-        self.btn_setFolder = self.window.findChild(QtWidgets.QPushButton, 'btn_setFolder')
-        self.lin_name = self.window.findChild(QtWidgets.QLineEdit, 'lin_name')
-        self.lab_path = self.window.findChild(QtWidgets.QLabel, 'lab_path')
-        self.lin_options = self.window.findChild(QtWidgets.QLineEdit, 'lin_options')
-        self.btn_create = self.window.findChild(QtWidgets.QPushButton, 'btn_create')
-        self.chb_example = self.window.findChild(QtWidgets.QCheckBox, 'chb_example')
+        self.act_docs = self.window.findChild(QAction, 'act_docs')
+        self.act_help = self.window.findChild(QAction, 'act_help')
+        self.btn_setFolder = self.window.findChild(QPushButton, 'btn_setFolder')
+        self.lin_name = self.window.findChild(QLineEdit, 'lin_name')
+        self.lab_path = self.window.findChild(QLabel, 'lab_path')
+        self.lin_options = self.window.findChild(QLineEdit, 'lin_options')
+        self.btn_create = self.window.findChild(QPushButton, 'btn_create')
+        self.chb_example = self.window.findChild(QCheckBox, 'chb_example')
 
 
         self.lab_path.setText('C:')
@@ -195,7 +197,7 @@ class ProjectManager(QtWidgets.QWidget):
         '''
         Let user to select project location
         '''
-        self.projectFolder = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select folder to store the project', 'C:/').replace('\\', '/')
+        self.projectFolder = QFileDialog.getExistingDirectory(self, 'Select folder to store the project', 'C:/').replace('\\', '/')
         self.lab_path.setText(self.projectFolder)
         self.buildProjectPath() # Update path in UI
 
@@ -313,7 +315,7 @@ class ProjectManager(QtWidgets.QWidget):
 
         print '>> Folder structure with pipeline files created in {0}/'.format(rootProject)
 
-    def createProject(self, catchWarning=False):
+    def createProject(self, catchWarning = None):
         '''
         Create new project on HDD and in Shotgun:
         :param catchWarning: returned value from Warning class (OK or NO)
@@ -323,9 +325,8 @@ class ProjectManager(QtWidgets.QWidget):
 
         # Create folder structure on HDD with necessary pipeline files
         if os.path.exists(rootProject):
-
             # If project folder already exists
-            if not catchWarning:
+            if catchWarning == None:
                 # Run warning dialog
                 self.warning = Warning(self, rootProject)  # Run SNV window
                 win = self.warning.window.show()
@@ -352,7 +353,7 @@ class ProjectManager(QtWidgets.QWidget):
         print '>> Run Houdini with {0}/PREP/PIPELINE/runHoudini.bat and create a magic!'.format(rootProject)
 
 # Run Create Project script
-app = QtWidgets.QApplication([])
+app = QApplication([])
 CP = ProjectManager()
 CP.window.show()
 app.exec_()

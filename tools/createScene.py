@@ -20,6 +20,12 @@ genesAssets = json.load(open(genesFileAssets)) # All shots genes
 sceneRoot = hou.node('/obj/')
 outRoot = hou.node('/out/')
 
+def checkGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
+    ''' Check if data for current shot/asset exists in database '''
+
+    shotGene = dna.getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets)
+    if shotGene:
+        return True
 
 def createHip(fileType, sequenceNumber, shotNumber, catch=None):
     '''
@@ -32,13 +38,7 @@ def createHip(fileType, sequenceNumber, shotNumber, catch=None):
 
     print '>> Saving {} hip file...'.format(fileType)
 
-    # Get current shot gene
-    # shotGene = dna.getShotGene(sequenceNumber, shotNumber, genesShots, genesAssets)
-    # if not shotGene:
-        # return
-
     # If createRenderScene() runs first time
-    print catch
     if catch == None:
 
         # Build path to 001 version
@@ -51,16 +51,13 @@ def createHip(fileType, sequenceNumber, shotNumber, catch=None):
         if not os.path.exists(pathScene):
             # Save first version if NOT EXISTS
             hou.hipFile.save(pathScene)
-            hou.ui.displayMessage('File created:\n{}'.format(pathScene.split('/')[-1]))
-            # print '>> First version of file saved!'
+            print '>> Hip created: {}'.format(pathScene.split('/')[-1])
         else:
             # If 001 version exists, get latest existing version
             pathScene = dna.buildPathLatestVersion(pathScene)
             # Run Save Next Version dialog if EXISTS
             winSNV = SNV(fileType, sequenceNumber, shotNumber, pathScene)
-            winSNV.show()
-            # winSNV.wait_modal()
-            # winSNV.close()
+            winSNV.exec_()
             return
 
     # If createRenderScene() runs from SNV class: return user choice, OVR or SNV
@@ -69,13 +66,15 @@ def createHip(fileType, sequenceNumber, shotNumber, catch=None):
         newPath = dna.buildPathNextVersion(dna.buildPathLatestVersion(
             dna.buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)))
         hou.hipFile.save(newPath)
-        hou.ui.displayMessage('New version saved:\n{}'.format(newPath.split('/')[-1]))
+        print '>> Hip saved with a latest version: {}'.format(newPath.split('/')[-1])
+
     elif catch == 'OVR':
         # Overwrite existing file
         pathScene = dna.buildPathLatestVersion(
             dna.buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber))
         hou.hipFile.save(pathScene)
-        hou.ui.displayMessage('File overwited:\n{}'.format(pathScene.split('/')[-1]))
+        print '>> Hip overwited: {}'.format(pathScene.split('/')[-1])
+
     else:
         return
 
@@ -86,7 +85,7 @@ def createHip(fileType, sequenceNumber, shotNumber, catch=None):
     hou.hipFile.save()
 
     print '>> Saving {} hip file done!'.format(fileType)
-
+    return 'AA'
 
 def buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots):
     '''
@@ -105,11 +104,6 @@ def buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots):
     '''
 
     print '>> Building scene content...'
-
-    # Get shot data. Stop if no data in database for current shot
-    shotGenes = dna.getShotGenes(sequenceNumber, shotNumber, genesShots)
-    if not shotGenes:
-        return
 
     # Expand shot data
 
@@ -185,8 +179,7 @@ def buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots):
     """
     print '>> Building scene content done!'
 
-
-class SNV(QtWidgets.QWidget):
+class SNV(QtWidgets.QDialog):
     def __init__(self, fileType, sequenceNumber, shotNumber, pathScene):
         # Setup UI
         super(SNV, self).__init__()
@@ -241,10 +234,11 @@ class CreateScene(QtWidgets.QWidget):
         '''
         sequenceNumber = self.ui.lin_episode.text()
         shotNumber = self.ui.lin_shot.text()
-        print 'A'
-        createHip(fileType, sequenceNumber, shotNumber)
-        #buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots)
-        print 'C'
+
+        # If shot exists in database run scene creation
+        if checkGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
+            createHip(fileType, sequenceNumber, shotNumber)
+            buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots)
 
     def createScene_rem(self, fileType, catch = None):
         '''
