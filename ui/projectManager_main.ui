@@ -235,12 +235,12 @@
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="btn_shotHipRNDCreate">
          <property name="text">
           <string>Create Render Hip</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton_3">
+        <widget class="QPushButton" name="btn_shotHipRNDOpen">
          <property name="text">
           <string>Open Render Hip</string>
          </property>
@@ -252,12 +252,12 @@
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
-        <widget class="QPushButton" name="pushButton_4">
+        <widget class="QPushButton" name="btn_shotHipANMCreate">
          <property name="text">
           <string>Create Anim Hip</string>
          </property>
         </widget>
-        <widget class="QPushButton" name="pushButton_5">
+        <widget class="QPushButton" name="btn_shotHipANMOpen">
          <property name="text">
           <string>Open Anim Hip</string>
          </property>

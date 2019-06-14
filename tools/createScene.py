@@ -20,72 +20,6 @@ genesAssets = json.load(open(genesFileAssets)) # All shots genes
 sceneRoot = hou.node('/obj/')
 outRoot = hou.node('/out/')
 
-def checkGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
-    ''' Check if data for current shot/asset exists in database '''
-
-    shotGene = dna.getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets)
-    if shotGene:
-        return True
-
-def createHip(fileType, sequenceNumber, shotNumber, catch=None):
-    '''
-    Save new scene, build scene content.
-    :param sceneType: type of created scene, Render, Animation etc
-    :param catch: determinate if procedure were run for the firs time from this class,
-    or it returns user reply from SNV class
-    :return:
-    '''
-
-    print '>> Saving {} hip file...'.format(fileType)
-
-    # If createRenderScene() runs first time
-    if catch == None:
-
-        # Build path to 001 version
-        pathScene = dna.buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
-
-        # Start new Houdini session without saving current
-        hou.hipFile.clear(suppress_save_prompt=True)
-
-        # Check if file exists
-        if not os.path.exists(pathScene):
-            # Save first version if NOT EXISTS
-            hou.hipFile.save(pathScene)
-            print '>> Hip created: {}'.format(pathScene.split('/')[-1])
-        else:
-            # If 001 version exists, get latest existing version
-            pathScene = dna.buildPathLatestVersion(pathScene)
-            # Run Save Next Version dialog if EXISTS
-            winSNV = SNV(fileType, sequenceNumber, shotNumber, pathScene)
-            winSNV.exec_()
-            return
-
-    # If createRenderScene() runs from SNV class: return user choice, OVR or SNV
-    elif catch == 'SNV':
-        # Save latest version
-        newPath = dna.buildPathNextVersion(dna.buildPathLatestVersion(
-            dna.buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)))
-        hou.hipFile.save(newPath)
-        print '>> Hip saved with a latest version: {}'.format(newPath.split('/')[-1])
-
-    elif catch == 'OVR':
-        # Overwrite existing file
-        pathScene = dna.buildPathLatestVersion(
-            dna.buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber))
-        hou.hipFile.save(pathScene)
-        print '>> Hip overwited: {}'.format(pathScene.split('/')[-1])
-
-    else:
-        return
-
-    # Build scene content
-    # buildSceneContent(fileType, sequenceNumber, shotNumber)
-
-    # Save scene
-    hou.hipFile.save()
-
-    print '>> Saving {} hip file done!'.format(fileType)
-    return 'AA'
 
 def buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots):
     '''
@@ -179,33 +113,6 @@ def buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots):
     """
     print '>> Building scene content done!'
 
-class SNV(QtWidgets.QDialog):
-    def __init__(self, fileType, sequenceNumber, shotNumber, pathScene):
-        # Setup UI
-        super(SNV, self).__init__()
-        self.fileType = fileType # RND, ANM etc. To return back to CS object
-        self.sequenceNumber = sequenceNumber
-        self.shotNumber = shotNumber
-        ui_file = '{}/saveNextVersion_Warning.ui'.format(dna.folderUI)
-        self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
-        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
-        # Setup label
-        message = 'File exists!\n{}'.format(dna.analyzeFliePath(pathScene)['fileName'])
-        self.ui.lab_message.setText(message)
-
-        # Setup buttons
-        self.ui.btn_SNV.clicked.connect(self.SNV)
-        self.ui.btn_SNV.clicked.connect(self.close)
-        self.ui.btn_OVR.clicked.connect(self.OVR)
-        self.ui.btn_OVR.clicked.connect(self.close)
-        self.ui.btn_ESC.clicked.connect(self.close)
-
-    def SNV(self):
-        createHip(self.fileType, self.sequenceNumber, self.shotNumber, catch='SNV')
-
-    def OVR(self):
-        createHip(self.fileType, self.sequenceNumber, self.shotNumber, catch='OVR')
-
 class CreateScene(QtWidgets.QWidget):
     def __init__(self):
         super(CreateScene, self).__init__()
@@ -236,8 +143,10 @@ class CreateScene(QtWidgets.QWidget):
         shotNumber = self.ui.lin_shot.text()
 
         # If shot exists in database run scene creation
-        if checkGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
-            createHip(fileType, sequenceNumber, shotNumber)
+        if not dna.checkGenes(sequenceNumber, shotNumber, genesShots):
+            return
+
+        if dna.createHip(fileType, sequenceNumber, shotNumber):
             buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots)
 
     def createScene_rem(self, fileType, catch = None):

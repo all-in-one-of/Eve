@@ -11,6 +11,10 @@ we will consider LATEST version of file published (which needs to be used).
 import os
 import json
 import glob
+import hou
+from PySide2 import QtCore, QtUiTools, QtWidgets
+
+#import utils
 
 # DEFINE COMMON VARIABLES AND PATHS
 # Pipeline items
@@ -27,6 +31,7 @@ extensionCamera = 'hiplc'
 #   - define file type in buildFilePath()
 fileTypes = {'animationScene': 'ANM',
              'renderScene': 'RND',
+             'assetScene': 'HDA',
              'renderSequence': 'EXR',
              'flipbookSequence': 'FBK',
              'cacheAnim': 'CAN',
@@ -417,6 +422,15 @@ def buildRenderSequencePath(scenePath=None):
 # shotNumber = '010'
 # shotCode = 'SHOT_010'
 
+def checkGenes(sequenceNumber, shotNumber, genesShots):
+    ''' Check if data for current shot exists in database '''
+
+    shotGene = getShotData(sequenceNumber, shotNumber, genesShots)
+    if shotGene:
+        return True
+    else:
+        print '>> There is no data for shot E{0}_S{1}'.format(sequenceNumber, shotNumber)
+
 def loadGenes(genesFile):
     return json.load(open(genesFile))
 
@@ -486,10 +500,7 @@ def getShotData(sequenceNumber, shotNumber, genesShots):
             if shot['code'] == shotCode:
                 shotData = shot
 
-    if shotData == None:
-        print '>> There is no data for shot E{0}_S{1}'.format(sequenceNumber, shotNumber)
-    else:
-        return shotData
+    return shotData
 
 def getAssetsDataByShot(shotData, genesAssets):
     '''
@@ -610,6 +621,61 @@ def getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
         return shotGene
 
 # SCENE MANIPULATIONS
+def createHip(fileType, sequenceNumber, shotNumber, catch=None):
+    '''
+    Save new scene, build scene content.
+    :param sceneType: type of created scene, Render, Animation etc
+    :param catch: determinate if procedure were run for the firs time from this class,
+    or it returns user reply from SNV class
+    :return:
+    '''
+
+    print '>> Saving {} hip file...'.format(fileType)
+
+    # If createRenderScene() runs first time
+    if catch == None:
+
+        # Build path to 001 version
+        pathScene = buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
+
+        # Start new Houdini session without saving current
+        hou.hipFile.clear(suppress_save_prompt=True)
+
+        # Check if file exists
+        if not os.path.exists(pathScene):
+            # Save first version if NOT EXISTS
+            hou.hipFile.save(pathScene)
+            print '>> Hip created: {}'.format(pathScene.split('/')[-1])
+            return True
+        else:
+            # If 001 version exists, get latest existing version
+            pathScene = buildPathLatestVersion(pathScene)
+            # Run Save Next Version dialog if EXISTS
+            winSNV = SNV(fileType, sequenceNumber, shotNumber, pathScene)
+            if winSNV.exec_():
+                return True
+            else:
+                return False
+
+    # If createRenderScene() runs from SNV class: return user choice, OVR or SNV
+    elif catch == 'SNV':
+        # Save latest version
+        newPath = buildPathNextVersion(buildPathLatestVersion(
+            buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)))
+        hou.hipFile.save(newPath)
+        print '>> Hip saved with a latest version: {}'.format(newPath.split('/')[-1])
+
+    elif catch == 'OVR':
+        # Overwrite existing file
+        pathScene = buildPathLatestVersion(
+            buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber))
+        hou.hipFile.save(pathScene)
+        print '>> Hip overwited: {}'.format(pathScene.split('/')[-1])
+
+    # Save current scene
+    hou.hipFile.save()
+
+    print '>> Saving {} hip file done!'.format(fileType)
 
 def createContainer(parent, name, bbox=0, mb=None, disp=1):
     '''
@@ -670,3 +736,35 @@ def createFolder(filePath):
     fileLocation = analyzeFliePath(filePath)['fileLocation']
     if not os.path.exists(fileLocation):
         os.makedirs(fileLocation)
+
+# UI
+class SNV(QtWidgets.QDialog):
+    def __init__(self, fileType, sequenceNumber, shotNumber, pathScene):
+        # Setup UI
+        super(SNV, self).__init__()
+        self.fileType = fileType # RND, ANM etc. To return back to CS object
+        self.sequenceNumber = sequenceNumber
+        self.shotNumber = shotNumber
+        ui_file = '{}/saveNextVersion_Warning.ui'.format(folderUI)
+        self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
+        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
+        # Setup label
+        message = 'File exists!\n{}'.format(analyzeFliePath(pathScene)['fileName'])
+        self.ui.lab_message.setText(message)
+
+        # Setup buttons
+        self.ui.btn_SNV.clicked.connect(self.SNV)
+        self.ui.btn_SNV.clicked.connect(self.close)
+        self.ui.btn_OVR.clicked.connect(self.OVR)
+        self.ui.btn_OVR.clicked.connect(self.close)
+        self.ui.btn_OVR.clicked.connect(self.close)
+        self.ui.btn_ESC.clicked.connect(self.close)
+
+
+    def SNV(self):
+        createHip(self.fileType, self.sequenceNumber, self.shotNumber, catch='SNV')
+        self.done(256) # return value to createHip() winSNV.exec_()
+
+    def OVR(self):
+        createHip(self.fileType, self.sequenceNumber, self.shotNumber, catch='OVR')
+        self.done(256) # return value to createHip() winSNV.exec_()

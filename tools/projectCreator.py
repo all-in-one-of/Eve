@@ -4,8 +4,7 @@ EVE - Houdini pipeline for VFX production
 
 Create folder structure for the project and copy pipeline files into it
 
-Release.
-Before switch to pySide2
+PySide Release.
 
 '''
 

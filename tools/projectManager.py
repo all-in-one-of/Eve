@@ -376,7 +376,9 @@ class ProjectManager(QtWidgets.QWidget):
         self.resize(960, 500)  # resize window
         self.setWindowTitle('{} Project Manager'.format(os.environ['ROOT'].split('/')[-1]))  # Title Main window
         self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
-
+        # Disable create buttons
+        self.butAssetsStat(False)
+        self.butShotsStat(False)
 
         # Asset UI
         ui_asset = "{}/projectManager_asset.ui".format(dna.folderUI)
@@ -408,6 +410,9 @@ class ProjectManager(QtWidgets.QWidget):
 
         self.ui.btn_saveShot.clicked.connect(self.saveShotEdits)
         self.ui.btn_saveAsset.clicked.connect(self.saveAssettEdits)
+        self.ui.btn_assetHipCreate.clicked.connect(self.createAssetHip)
+        self.ui.btn_shotHipANMCreate.clicked.connect(lambda: self.createShotHip(dna.fileTypes['animationScene']))
+        self.ui.btn_shotHipRNDCreate.clicked.connect(lambda: self.createShotHip(dna.fileTypes['renderScene']))
         self.ui.btn_assetAdd.clicked.connect(self.addAsset)
         self.ui.btn_assetDel.clicked.connect(self.delAssets)
         self.ui.btn_seqAdd.clicked.connect(self.addSequences)
@@ -418,6 +423,18 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui_shot.btn_addShotAsset.clicked.connect(lambda: linkAsset(self.ui_shot))
         self.ui_shot.btn_delShotAsset.clicked.connect(lambda: unlinkAsset(self.ui_shot))
 
+    # UI FUNCTIONALITY
+
+    def butAssetsStat(self, value):
+        self.ui.btn_assetHipCreate.setEnabled(value)
+        self.ui.btn_assetHipOpen.setEnabled(value)
+
+    def butShotsStat(self, value):
+        self.ui.btn_shotHipRNDCreate.setEnabled(value)
+        self.ui.btn_shotHipANMCreate.setEnabled(value)
+        self.ui.btn_shotHipRNDOpen.setEnabled(value)
+        self.ui.btn_shotHipANMOpen.setEnabled(value)
+
     def changeSelectionSeq(self):
         '''Clear list of shots if no sequence selected'''
         if self.ui.lis_seq.selectedItems() == []:
@@ -427,6 +444,7 @@ class ProjectManager(QtWidgets.QWidget):
         '''Clear shot properties if no shot selected'''
         if self.ui.lis_shots.selectedItems() == []:
             self.ui_shot.hide()
+            self.butShotsStat(False)
 
     def changeSelectionAsset(self):
         '''Clear asset properties if no asset selected'''
@@ -477,7 +495,9 @@ class ProjectManager(QtWidgets.QWidget):
         :return:
         '''
 
+        # Show SHOT UI and enable buttons
         self.ui_shot.show()
+        self.butShotsStat(True)
 
         if type(shot) is unicode:
             shotNumber = shot
@@ -531,6 +551,8 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui_asset.com_assetType.setCurrentIndex(index)
         self.ui_asset.lin_assetHDA.setText(dataAsset['hda_name'])
         self.ui_asset.lin_description.setText(dataAsset['description'])
+
+    # TOOL FUNCTIONALITY
 
     def addAsset(self, catch=None):
         '''Add asset to database'''
@@ -735,6 +757,26 @@ class ProjectManager(QtWidgets.QWidget):
         json.dump(genesAssetsNEW, open(genesFileAssets, 'w'), indent=4)
 
         print '>> Asset {} updated!'.format(assetDataUI['assetName'])
+
+    def createAssetHip(self):
+        assets = self.ui.lis_assets.selectedItems()
+        for asset in assets:
+            print asset.text()
+
+    def createShotHip(self, fileType):
+
+        # Get E S from SHOT properties window
+        sequenceNumber = self.ui_shot.com_shotSequence.currentText()
+        shotNumber = self.ui_shot.lin_shotName.text()
+
+
+        # If shot exists in database run scene creation
+        if not dna.checkGenes(sequenceNumber, shotNumber, genesShots):
+            return
+
+        if dna.createHip(fileType, sequenceNumber, shotNumber):
+            # buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots)
+            print 'CONTENT!'
 
 
 # Create Tool instance
