@@ -8,6 +8,10 @@ we will consider LATEST version of file published (which needs to be used).
 
 '''
 
+# TODO: modify STATIC assets handling: move them to LIBRARY
+# TODO: Solve sorting of FX assets scenes(ASSETS(CHAR, ENV, PROP), SHOTS) in PATTERNS
+# TODO: Solve sorting of CHARACTER assets scenes (GEO, RIG, FUR) in PATTERNS
+
 import os
 import json
 import glob
@@ -31,14 +35,17 @@ extensionCamera = 'hiplc'
 #   - define file type in buildFilePath()
 fileTypes = {'animationScene': 'ANM',
              'renderScene': 'RND',
-             'assetScene': 'HDA',
+             'character': 'GEO',
+             'environment': 'ENV',
+             'prop': 'PRO',
+             'FX': 'FXS',
              'renderSequence': 'EXR',
              'flipbookSequence': 'FBK',
              'cacheAnim': 'CAN',
              'cacheCamera': 'CAM'}
 
 # Asset types
-assetTypes = ['Character', 'Environment', 'Prop', 'FX']
+assetTypes = ['character', 'environment', 'prop', 'FX']
 
 # Common variables
 frameStart = 1
@@ -66,17 +73,30 @@ fileNameSequence =  'E{0}_S{1}_{2}.$F.{3}'                                 # Out
 fileNameAnimation = fileTypes['animationScene'] + '_E{0}_S{1}_{2}.{3}'     # Animation scene name
 fileNameRender =    fileTypes['renderScene'] + '_E{0}_S{1}_{2}.{3}'        # Render scene name
 fileNameCamera =    fileTypes['cacheCamera'] + '_E{0}_S{1}_{2}.{3}'        # Camera exported ANM >> RND name
+fileNameChar =      fileTypes['character'] + '_{0}_{1}.{2}'                # Character asset scene name
+fileNameEnv =       fileTypes['environment'] + '_{0}_{1}.{2}'              # Env asset scene name
+fileNameProp =      fileTypes['prop'] + '_{0}_{1}.{2}'                     # Prop asset scene name
+fileNameFX =        fileTypes['FX'] + '_{0}_{1}.{2}'                       # FX asset scene name
 
 filePathAnimation =       '{0}/scenes/ANIMATION/{1}/SHOT_{2}/{3}'          # Animation scene path
 filePathRender =          '{0}/scenes/RENDER/{1}/SHOT_{2}/{3}'             # Render scene path
 filePathSequenceRender =  '{0}/render/{1}/SHOT_{2}/{3}/{4}'                # Render sequence path
 filePathSequenceCache =   '$JOB/geo/SHOTS/{0}/SHOT_{1}/{2}/GEO/{3}/{4}'    # Characters geometry cache path
 filePathCamera =          '{0}/geo/SHOTS/{1}/SHOT_{2}/CAM/{3}'             # Camera ANM >> RND path
+filePathChar =            '{0}/scenes/ASSETS/CHARACTERS/{1}/{2}/{3}'       # Character asset scene path
+filePathEnv =             '{0}/scenes/ASSETS/ENVIRONMENTS/{1}/{2}'         # Environment asset scene path
+filePathProp =            '{0}/scenes/ASSETS/PROPS/{1}/{2}'                # Prop asset scene path
+filePathFX =              '{0}/scenes/FX/ASSETS/ENVIRONMENTS/{1}/{2}'      # FX asset scene path. WIP! need solve sorting
+
+
 
 # HOUDINI SCENE CONTENT
 # Currently string oriented.
 # Another option is to use custom UID (node.setUserData()) for each node and save it in database. Potentially TBD.
 
+# Get Houdini root nodes
+sceneRoot = hou.node('/obj/')
+outRoot = hou.node('/out/')
 # Distance between nodes in scene view
 nodeDistance_x = 3.0
 nodeDistance_y = 0.8
@@ -315,9 +335,10 @@ def buildPathLatestVersion(filePath):
 
     return filePathLatestVersion
 
-def buildFilePath(version, fileType, scenePath=None, characterName=None, sequenceNumber=None, shotNumber=None):
+def buildFilePath(version, fileType, scenePath=None, assetName=None, sequenceNumber=None, shotNumber=None):
     '''
     Generate and return a full path to a file <filePath> (string).
+
     Rely on # FILE NAMES AND PATHS PATTERNS
     There are 2 options to build a path:
         - based on Houdini scene name (in addition to file type and version)
@@ -326,7 +347,7 @@ def buildFilePath(version, fileType, scenePath=None, characterName=None, sequenc
     :param version: version of the file
     :param fileType: type of file to generate (string), 'ANM', 'RND' etc
     :param scenePath: Full path to Houdini scene
-    :param characterName: name of character asset
+    :param assetName: name of character asset
     :param sequenceNumber: Episode number (sequence number = sequence code) (010)
     :param shotNumber: Shot number (010)
     :return filePath: generated full path (string)
@@ -336,6 +357,16 @@ def buildFilePath(version, fileType, scenePath=None, characterName=None, sequenc
         filePathData = analyzeFliePath(scenePath)
         sequenceNumber = filePathData['sequenceNumber']
         shotNumber = filePathData['shotNumber']
+
+    # ASSET scenes. CHARACTER
+    if fileType == fileTypes['character']:
+        fileName = fileNameChar.format(assetName, version, extensionHoudini)
+        filePath = filePathChar.format(root3D, assetName, 'GEO', fileName)
+
+    # ASSET scenes. ENV
+    if fileType == fileTypes['environment']:
+        fileName = fileNameEnv.format(assetName, version, extensionHoudini)
+        filePath = filePathEnv.format(root3D, assetName, fileName)
 
     # RENDER scene path
     if fileType == fileTypes['renderScene']:
@@ -361,7 +392,7 @@ def buildFilePath(version, fileType, scenePath=None, characterName=None, sequenc
     # Character animation CACHE path
     elif fileType == fileTypes['cacheAnim']:
         fileName = fileNameSequence.format(sequenceNumber, shotNumber, version, extensionCacheAnim)
-        filePath = filePathSequenceCache.format(sequenceNumber, shotNumber, characterName, version, fileName)
+        filePath = filePathSequenceCache.format(sequenceNumber, shotNumber, assetName, version, fileName)
 
     # CAMERA file ANM scene >> RND scene
     elif fileType == fileTypes['cacheCamera']:
@@ -539,7 +570,7 @@ def getAssetDataByType(assetsData, assetType):
     # assetsData = list of assets dictionaries linked to shot
     # assetType = 'Environment', 'Character', 'Prop'
 
-    if assetType == 'Environment':
+    if assetType == 'environment':
         listEnvironments = []
         for assetData in assetsData:
             if assetData['sg_asset_type'] == assetType:
@@ -573,7 +604,6 @@ def getAssetDataByName(genesAssets, assetCode):
 
 def getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
     '''
-
     Pull all asset and shot data from the database during one call:
        - Get data for the current shot
        - Get assets linked to current shot
@@ -609,7 +639,7 @@ def getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
 
     if shotData:
         assetsData = getAssetsDataByShot(shotData, genesAssets)
-        environmentData = getAssetDataByType(assetsData, 'Environment')
+        environmentData = getAssetDataByType(assetsData, 'environment')
         charactersData = getAssetDataByType(assetsData, 'Character')
         fxData = getAssetDataByType(assetsData, 'FX')
 
@@ -621,89 +651,6 @@ def getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
         return shotGene
 
 # SCENE MANIPULATIONS
-def createHip(fileType, sequenceNumber, shotNumber, catch=None):
-    '''
-    Save new scene, build scene content.
-    :param sceneType: type of created scene, Render, Animation etc
-    :param catch: determinate if procedure were run for the firs time from this class,
-    or it returns user reply from SNV class
-    :return:
-    '''
-
-    print '>> Saving {} hip file...'.format(fileType)
-
-    # If createRenderScene() runs first time
-    if catch == None:
-
-        # Build path to 001 version
-        pathScene = buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
-
-        # Start new Houdini session without saving current
-        hou.hipFile.clear(suppress_save_prompt=True)
-
-        # Check if file exists
-        if not os.path.exists(pathScene):
-            # Save first version if NOT EXISTS
-            hou.hipFile.save(pathScene)
-            print '>> Hip created: {}'.format(pathScene.split('/')[-1])
-            return True
-        else:
-            # If 001 version exists, get latest existing version
-            pathScene = buildPathLatestVersion(pathScene)
-            # Run Save Next Version dialog if EXISTS
-            winSNV = SNV(fileType, sequenceNumber, shotNumber, pathScene)
-            if winSNV.exec_():
-                return True
-            else:
-                return False
-
-    # If createRenderScene() runs from SNV class: return user choice, OVR or SNV
-    elif catch == 'SNV':
-        # Save latest version
-        newPath = buildPathNextVersion(buildPathLatestVersion(
-            buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)))
-        hou.hipFile.save(newPath)
-        print '>> Hip saved with a latest version: {}'.format(newPath.split('/')[-1])
-
-    elif catch == 'OVR':
-        # Overwrite existing file
-        pathScene = buildPathLatestVersion(
-            buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber))
-        hou.hipFile.save(pathScene)
-        print '>> Hip overwited: {}'.format(pathScene.split('/')[-1])
-
-    # Save current scene
-    hou.hipFile.save()
-
-    print '>> Saving {} hip file done!'.format(fileType)
-
-def createContainer(parent, name, bbox=0, mb=None, disp=1):
-    '''
-    Create scene container for CHARS, ENV etc
-    :param parent: container node parent object (where to cretae it)
-    :param name: container name
-    :param bbox: display container content as bounding box (bbox = 2, full = 0)
-    :param mb: turn on motion blur for container content geometry
-    :param disp: Display container node flag (ON = 1, OFF = 0)
-    :return:
-    '''
-
-    CONTAINER = parent.createNode('geo',name)
-
-    # Display as bounding box
-    CONTAINER.parm('viewportlod').set(bbox)
-
-    # Set display flag
-    CONTAINER.setDisplayFlag(disp)
-
-    # Turn ON motion blur
-    if mb is not None:
-        CONTAINER.parm('geo_velocityblur').set(1)
-
-    print '>>>> Created Container: {0}'.format(name)
-
-    return CONTAINER
-
 def collectCamera(camera):
     '''
     Create and return list of all camera nodes (parents)
@@ -723,6 +670,216 @@ def setCameraParameters(camera):
     camera.parm('resx').set(resolution_HR[0])
     camera.parm('resy').set(resolution_HR[1])
 
+def createHDA(parent, hdaTypeName, hdaName):
+    '''
+    Create Houdini digital asset node in scene and set latest file version
+
+    :param hdaTypeName:
+    :param hdaName:
+    :return:
+    '''
+
+    # Create HDA node inside parent container
+    hda = parent.createNode(hdaTypeName, hdaName)
+
+    # Set HDA file version (latest)
+    hdaDefinitions = hda.type().allInstalledDefinitions()
+    hdaPaths = [i.libraryFilePath() for i in hdaDefinitions]
+    latestVersion = extractLatestVersionFile(hdaPaths)  # 010
+
+    for i in hdaPaths:
+        if latestVersion in i.split('/')[-1]:
+            latestIndex = hdaPaths.index(i)
+            hdaDefinitions[latestIndex].setIsPreferred(True)
+
+    return hda
+
+def createContainer(parent, name, bbox=0, mb=None, disp=1):
+    '''
+    Create scene container for CHARS, ENV etc
+
+    :param parent: container node parent object (where to cretae it)
+    :param name: container name
+    :param bbox: display container content as bounding box (bbox = 2, full = 0)
+    :param mb: turn on motion blur for container content geometry
+    :param disp: Display container node flag (ON = 1, OFF = 0)
+    :return:
+    '''
+
+    CONTAINER = parent.createNode('geo', name)
+
+    # Display as bounding box
+    CONTAINER.parm('viewportlod').set(bbox)
+
+    # Set display flag
+    CONTAINER.setDisplayFlag(disp)
+
+    # Turn ON motion blur
+    if mb is not None:
+        CONTAINER.parm('geo_velocityblur').set(1)
+
+    print '>>>> Created Container: {0}'.format(name)
+
+    return CONTAINER
+
+def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAssets):
+    '''
+    Create (Update???) SHOT scene content: import characters, environments, props, materials etc.
+
+    Render scene schema:
+        [Render obj]      [Environment]     [Characters]     [Props]      [FX]
+        - materials       - Env             - char 1         - prop 1     - fx 1
+        - lights                            - char 2         - prop 2     - fx 2
+        - camera                            - ...            - ...        - ...
+
+    :param fileType:
+    :param sequenceNumber:
+    :param shotNumber:
+    :return:
+    '''
+
+    print '>> Building scene content...'
+
+    # Expand shot data
+    shotGene = getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets)
+    environmentData = shotGene['environmentData']
+    characterData = shotGene['charactersData']
+    fxData = shotGene['fxData']
+    frameEnd = shotGene['shotData']['sg_cut_out']
+
+    # Initialize scene
+    scenePath = hou.hipFile.path()
+
+
+    # SETUP SCENE generall
+    hou.playbar.setFrameRange(frameStart, frameEnd)
+    hou.playbar.setPlaybackRange(frameStart, frameEnd)
+
+    # [Environment] + [Render objects]
+    if environmentData:
+        ENV = createHDA(sceneRoot, environmentData['hda_name'], environmentData['code'])
+        ENV.setPosition([nodeDistance_x, 0])
+
+        # Add Material lib HDA
+        # mat_data = environmentData['materials']
+        # ML = sceneRoot.createNode(mat_data['hda_name'], mat_data['name'])
+        # ML.setPosition([0, 0])
+        # Add lights HDA
+        # lit_data = environmentData['lights']
+        # LIT = sceneRoot.createNode(lit_data['hda_name'], lit_data['name'])
+        # LIT.setPosition([0, -nodeDistance_y])
+
+    """
+    # [Characters]
+    if characterData:
+        for n, character in enumerate(characterData):
+            CHAR = dna.createContainer(sceneRoot, characterData[n]['code'], mb=1)
+            CHAR.setPosition([2*dna.nodeDistance_x, n*dna.nodeDistance_y])
+
+    # [FX]
+    if fxData:
+        for n, FX in enumerate(fxData):
+            FX = sceneRoot.createNode(FX['hda_name'], FX['code'])
+            FX.setPosition([3*dna.nodeDistance_x, n*dna.nodeDistance_y])
+
+    # Setup Render scene
+    if fileType == dna.fileTypes['renderScene']:
+        # SETUP MANTRA OUTPUT
+        # Create mantra render node
+        mantra = outRoot.createNode('ifd', dna.mantra)
+
+        # Render sequence setup
+        renderSequence = dna.buildRenderSequencePath(scenePath)
+
+        # Setup Mantra parameters
+        mantra.parm('vm_picture').set(renderSequence)
+        cameraName = dna.cameraName.format(sequenceNumber, shotNumber)
+        mantra.parm('camera').set('/obj/{}'.format(cameraName))
+        # Set common parameters from preset
+        for param, value in dna.renderSettings['common'].iteritems():
+            mantra.parm(param).set(value)
+        # Set DRAFT parameters
+        for param, value in dna.renderSettings['draft'].iteritems():
+            mantra.parm(param).set(value)
+
+    # Setup Animation Scene
+    if fileType == dna.fileTypes['animationScene']:
+        # Create Camera
+        CAM = sceneRoot.createNode('cam', 'E{0}_S{1}'.format(sequenceNumber, shotNumber))
+        CAM.setPosition([0, -dna.nodeDistance_y*2])
+        dna.setCameraParameters(CAM)
+    """
+    print '>> Building scene content done!'
+
+def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, catch=None):
+    '''
+    Create asset/shot Houdini scene.
+
+    :param fileType: type of created scene, Asset, Render, Animation etc
+    :param catch: determinate if procedure were run for the firs time,
+                  or it returns user reply from SNV class
+    :return:
+    '''
+
+    print '>> Saving {} hip file...'.format(fileType)
+    # print 'catch = {}'.format(catch)
+
+    # First time run
+    if catch == None:
+        # Build path to 001 version
+        # SHOTS scenes
+        if fileType == fileTypes['animationScene'] or fileType == fileTypes['renderScene']:
+            pathScene = buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
+        # ASSETS scenes
+        else:
+            pathScene = buildFilePath('001', fileType, assetName=assetName)
+
+        # Start new Houdini session without saving current
+        hou.hipFile.clear(suppress_save_prompt=True)
+
+        # Check if file exists
+        if not os.path.exists(pathScene):
+            # Create FOLDER for HIP
+            sceneLocation = analyzeFliePath(pathScene)['fileLocation']
+            if not os.path.exists(pathScene):
+                os.makedirs(sceneLocation)
+            # Save first version if NOT EXISTS
+            hou.hipFile.save(pathScene)
+            print '>> Hip created: {}'.format(pathScene.split('/')[-1])
+            return True
+        else:
+            # If 001 version exists, get latest existing version
+            pathScene = buildPathLatestVersion(pathScene)
+            # Run Save Next Version dialog if EXISTS
+            winSNV = SNV(fileType, sequenceNumber, shotNumber, assetName, pathScene)
+            if winSNV.exec_():
+                return True
+            else:
+                return False
+
+    # Run from SNV class: return user choice = SAVE NEXT VERSION
+    elif catch == 'SNV':
+        # Save latest version
+        pathScene = buildPathNextVersion(buildPathLatestVersion(
+            buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber, assetName=assetName)))
+        hou.hipFile.save(pathScene)
+        print '>> Hip saved with a latest version: {}'.format(pathScene.split('/')[-1])
+
+    # Run from SNV class: return user choice = OVERWRITE
+    elif catch == 'OVR':
+        # Overwrite existing file
+        pathScene = buildPathLatestVersion(
+            buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber, assetName=assetName))
+        hou.hipFile.save(pathScene)
+        print '>> Hip overwrited: {}'.format(pathScene.split('/')[-1])
+
+    # Save current scene
+    hou.hipFile.save()
+
+    print '>> Saving {} hip file done!'.format(fileType)
+
+
+
 # UNSORTED
 def createFolder(filePath):
     '''
@@ -739,12 +896,13 @@ def createFolder(filePath):
 
 # UI
 class SNV(QtWidgets.QDialog):
-    def __init__(self, fileType, sequenceNumber, shotNumber, pathScene):
+    def __init__(self, fileType, sequenceNumber, shotNumber, assetName, pathScene):
         # Setup UI
         super(SNV, self).__init__()
         self.fileType = fileType # RND, ANM etc. To return back to CS object
         self.sequenceNumber = sequenceNumber
         self.shotNumber = shotNumber
+        self.assetName = assetName
         ui_file = '{}/saveNextVersion_Warning.ui'.format(folderUI)
         self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
         self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
@@ -762,9 +920,9 @@ class SNV(QtWidgets.QDialog):
 
 
     def SNV(self):
-        createHip(self.fileType, self.sequenceNumber, self.shotNumber, catch='SNV')
+        createHip(self.fileType, self.sequenceNumber, self.shotNumber, self.assetName, catch='SNV')
         self.done(256) # return value to createHip() winSNV.exec_()
 
     def OVR(self):
-        createHip(self.fileType, self.sequenceNumber, self.shotNumber, catch='OVR')
+        createHip(self.fileType, self.sequenceNumber, self.shotNumber, self.assetName, catch='OVR')
         self.done(256) # return value to createHip() winSNV.exec_()

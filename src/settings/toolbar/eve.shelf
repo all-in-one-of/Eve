@@ -10,9 +10,9 @@
     <memberTool name="snv"/>
     <memberTool name="create Flipbook"/>
     <memberTool name="createScene"/>
+    <memberTool name="scene_manager"/>
     <memberTool name="export animation data"/>
     <memberTool name="importANM"/>
-    <memberTool name="render_manager"/>
     <memberTool name="render_farm"/>
   </toolshelf>
 
@@ -39,7 +39,7 @@ createScene.run()
 ]]></script>
   </tool>
 
-  <tool name="create Flipbook" label="FB" icon="PLASMA_App">
+  <tool name="create Flipbook" label="FlipB" icon="PLASMA_App">
     <script scriptType="python"><![CDATA[import createFlipbook
 reload(createFlipbook)
 createFlipbook.run()]]></script>
@@ -51,12 +51,6 @@ reload(exportAnimation)
 exportAnimation.run()]]></script>
   </tool>
 
-  <tool name="render_manager" label="RND" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[import renderManager
-reload(renderManager)
-renderManager.run()]]></script>
-  </tool>
-
   <tool name="render_farm" label="Farm" icon="PLASMA_App">
     <script scriptType="python"><![CDATA[import renderFarm
 reload(renderFarm)
@@ -66,6 +60,15 @@ renderFarm.run()]]></script>
   <tool name="project_manager" label="PM" icon="PLASMA_App">
     <script scriptType="python"><![CDATA[import projectManager
 reload(projectManager)
-projectManager.run()]]></script>
+projectManager.run()
+
+#if kwargs["ctrlclick"] != True:
+#createScene.run()]]></script>
+  </tool>
+
+  <tool name="scene_manager" label="Edit Scene" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import sceneManager
+reload(sceneManager)
+sceneManager.run()]]></script>
   </tool>
 </shelfDocument>

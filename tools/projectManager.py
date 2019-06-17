@@ -74,19 +74,6 @@ def unlinkAsset(ui_shot):
     for asset in selectedAssets:
         ui_shot.lis_assets.takeItem(ui_shot.lis_assets.row(asset))
 
-def createListShotAssets(ui_shot):
-    '''
-    Create list of shot assets dictionaries
-    for 'assets' key in shot genes dictionary
-    :return:
-    '''
-    assets = []
-    for index in xrange(ui_shot.lis_assets.count()):
-        assetName = ui_shot.lis_assets.item(index).text()
-        assets.append({"code": "{}".format(assetName)})
-
-    return assets
-
 def getShotDataUI(ui_shot):
     '''
     Get shot data values from shot UI
@@ -154,6 +141,19 @@ def updatAssetData(assetData, assetDataUI):
     assetData['description'] = assetDataUI['description']
 
     return assetData
+
+def createListShotAssets(ui_shot):
+    '''
+    Create list of shot assets dictionaries
+    for 'assets' key in shot genes dictionary
+    :return:
+    '''
+    assets = []
+    for index in xrange(ui_shot.lis_assets.count()):
+        assetName = ui_shot.lis_assets.item(index).text()
+        assets.append({"code": "{}".format(assetName)})
+
+    return assets
 
 class LinkAssets(QtWidgets.QWidget):
     '''
@@ -411,6 +411,7 @@ class ProjectManager(QtWidgets.QWidget):
         self.ui.btn_saveShot.clicked.connect(self.saveShotEdits)
         self.ui.btn_saveAsset.clicked.connect(self.saveAssettEdits)
         self.ui.btn_assetHipCreate.clicked.connect(self.createAssetHip)
+        self.ui.btn_assetHipOpen.clicked.connect(self.openAssetHip)
         self.ui.btn_shotHipANMCreate.clicked.connect(lambda: self.createShotHip(dna.fileTypes['animationScene']))
         self.ui.btn_shotHipRNDCreate.clicked.connect(lambda: self.createShotHip(dna.fileTypes['renderScene']))
         self.ui.btn_assetAdd.clicked.connect(self.addAsset)
@@ -450,6 +451,7 @@ class ProjectManager(QtWidgets.QWidget):
         '''Clear asset properties if no asset selected'''
         if self.ui.lis_shots.selectedItems() == []:
             self.ui_asset.hide()
+            self.butAssetsStat(False)
 
     def poulateAssets(self):
         '''Add Asset data to UI'''
@@ -541,6 +543,7 @@ class ProjectManager(QtWidgets.QWidget):
 
 
         self.ui_asset.show()
+        self.butAssetsStat(True)
 
         assetName = asset.text()
         dataAsset = dna.getAssetDataByName(genesAssets, assetName)
@@ -561,6 +564,7 @@ class ProjectManager(QtWidgets.QWidget):
             CA.show()
         else: # After closing Add Asset window
             # Reload genes
+            print 'A'
             global genesAssets
             genesAssets = dna.loadGenes(genesFileAssets)
             # Repopulate Asset
@@ -759,9 +763,43 @@ class ProjectManager(QtWidgets.QWidget):
         print '>> Asset {} updated!'.format(assetDataUI['assetName'])
 
     def createAssetHip(self):
+        '''
+        Create Houdini scenes for asset entities of database.
+
+        TBD when create hip:
+            - Character: ask if its GEO, RIG or FUR scene
+            - FX: ask if its asset (char, env, prop) or shot (E### S###) FX
+
+        :return:
+        '''
         assets = self.ui.lis_assets.selectedItems()
+
         for asset in assets:
-            print asset.text()
+            assetName = asset.text()
+
+            # Get asset data
+            assetData = dna.getAssetDataByName(genesAssets, assetName)
+            # Create HIP file
+            dna.createHip(dna.fileTypes[assetData['sg_asset_type']], assetName=assetName)
+
+    def openAssetHip(self):
+        '''
+        Open latest version of asset hip file
+
+        :return:
+        '''
+        assets = self.ui.lis_assets.selectedItems()
+
+        assetName = assets[0].text()
+        # Get asset data
+        assetData = dna.getAssetDataByName(genesAssets, assetName)
+        # Build path to a 001 version of HIP file
+        fileType = dna.fileTypes[assetData['sg_asset_type']]
+        pathScene = dna.buildFilePath('001', fileType, assetName=assetName)
+        # Get latest file version
+        pathScene = dna.buildPathLatestVersion(pathScene)
+        # Open file
+        hou.hipFile.load(pathScene)
 
     def createShotHip(self, fileType):
 
@@ -769,14 +807,12 @@ class ProjectManager(QtWidgets.QWidget):
         sequenceNumber = self.ui_shot.com_shotSequence.currentText()
         shotNumber = self.ui_shot.lin_shotName.text()
 
-
         # If shot exists in database run scene creation
         if not dna.checkGenes(sequenceNumber, shotNumber, genesShots):
             return
 
         if dna.createHip(fileType, sequenceNumber, shotNumber):
-            # buildSceneContent(fileType, sequenceNumber, shotNumber, genesShots)
-            print 'CONTENT!'
+            dna.buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAssets)
 
 
 # Create Tool instance
