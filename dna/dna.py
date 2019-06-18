@@ -850,7 +850,7 @@ def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAsse
     """
     print '>> Building scene content done!'
 
-def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, catch=None):
+def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, pathScene=None, catch=None):
     '''
     Create asset/shot Houdini scene.
 
@@ -861,8 +861,22 @@ def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, ca
     '''
 
     print '>> Saving {} hip file...'.format(fileType)
-    # print 'catch = {}'.format(catch)
 
+    # Build path to 001 version
+    if catch==None:
+        # SHOTS scenes
+        if fileType == fileTypes['animationScene'] or fileType == fileTypes['renderScene']:
+            pathScene = buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
+        # ASSETS scenes
+        else:
+            pathScene = buildFilePath('001', fileType, assetName=assetName)
+
+    if snv(pathScene, 'createHip', catch):
+        print 'A'
+    else:
+        print B''
+
+    """
     # First time run
     if catch == None:
         # Build path to 001 version
@@ -916,7 +930,51 @@ def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, ca
     hou.hipFile.save()
 
     print '>> Saving {} hip file done!'.format(fileType)
+    """
 
+def snv(filePath, parentName, catch=None):
+
+    # First time run
+    if catch == None:
+        # Start new Houdini session without saving current
+        hou.hipFile.clear(suppress_save_prompt=True)
+
+        # Check if file exists
+        if not os.path.exists(filePath):
+            # Create FOLDER for HIP
+            fileLocation = analyzeFliePath(filePath)['fileLocation']
+            if not os.path.exists(fileLocation):
+                os.makedirs(fileLocation)
+            # Save first version if NOT EXISTS
+            hou.hipFile.save(filePath)
+            print '>> Hip created: {}'.format(filePath.split('/')[-1])
+            return True
+        else:
+            # If 001 version exists, get latest existing version
+            filePath = buildPathLatestVersion(filePath)
+            # Run Save Next Version dialog if EXISTS
+            winSNV = SNV2(filePath, parentName) # fileType, sequenceNumber, shotNumber, assetName,
+            if winSNV.exec_():
+                return True
+            else:
+                return False
+
+    # Run from SNV class: return user choice = SAVE NEXT VERSION
+    elif catch == 'SNV':
+        # Save latest version
+        filePath = buildPathNextVersion(buildPathLatestVersion(filePath))
+        hou.hipFile.save(filePath)
+        print '>> Hip saved with a latest version: {}'.format(filePath.split('/')[-1])
+
+    # Run from SNV class: return user choice = OVERWRITE
+    elif catch == 'OVR':
+        # Overwrite existing file
+        filePath = buildPathLatestVersion(filePath)
+        hou.hipFile.save(filePath)
+        print '>> Hip overwrited: {}'.format(filePath.split('/')[-1])
+
+    # Save current scene
+    hou.hipFile.save()
 
 
 # UNSORTED
@@ -965,3 +1023,33 @@ class SNV(QtWidgets.QDialog):
     def OVR(self):
         createHip(self.fileType, self.sequenceNumber, self.shotNumber, self.assetName, catch='OVR')
         self.done(256) # return value to createHip() winSNV.exec_()
+
+class SNV2(QtWidgets.QDialog):
+    def __init__(self, filePath, parentName):
+        # Setup UI
+        super(SNV2, self).__init__()
+        self.filePath = filePath
+        self.parentName = parentName # Name of the function from which SNV was launched
+        ui_file = '{}/saveNextVersion_Warning.ui'.format(folderUI)
+        self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
+        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
+        # Setup label
+        message = 'File exists!\n{}'.format(analyzeFliePath(self.filePath )['fileName'])
+        self.ui.lab_message.setText(message)
+
+        # Setup buttons
+        self.ui.btn_SNV.clicked.connect(self.SNV)
+        self.ui.btn_SNV.clicked.connect(self.close)
+        self.ui.btn_OVR.clicked.connect(self.OVR)
+        self.ui.btn_OVR.clicked.connect(self.close)
+        self.ui.btn_OVR.clicked.connect(self.close)
+        self.ui.btn_ESC.clicked.connect(self.close)
+
+    def SNV(self):
+        eval("{}(None, pathScene=self.filePath, catch='SNV')".format(self.parentName))
+        self.done(256)  # return value to parentName function winSNV.exec_()
+
+    def OVR(self):
+        eval("{}(None, pathScene=self.filePath, catch='OVR')".format(self.parentName))
+        self.done(256)  # return value to parentName function winSNV.exec_()
+
