@@ -24,10 +24,11 @@ from PySide2 import QtCore, QtUiTools, QtWidgets
 # Pipeline items
 pipelineName = 'Eve'
 extensionHoudini = 'hiplc'
+extensionHDA = 'hdalc'
 extensionRender = 'exr'
 extensionFlipbook = 'jpg'
 extensionCacheAnim = 'bgeo.sc'
-extensionCamera = 'hiplc'
+extensionCamera = extensionHoudini
 
 
 # FILE TYPES dictionary. Used for:
@@ -39,6 +40,7 @@ fileTypes = {'animationScene': 'ANM',
              'environment': 'ENV',
              'prop': 'PRO',
              'FX': 'FXS',
+             'HDA': 'HDA',
              'renderSequence': 'EXR',
              'flipbookSequence': 'FBK',
              'cacheAnim': 'CAN',
@@ -77,6 +79,7 @@ fileNameChar =      fileTypes['character'] + '_{0}_{1}.{2}'                # Cha
 fileNameEnv =       fileTypes['environment'] + '_{0}_{1}.{2}'              # Env asset scene name
 fileNameProp =      fileTypes['prop'] + '_{0}_{1}.{2}'                     # Prop asset scene name
 fileNameFX =        fileTypes['FX'] + '_{0}_{1}.{2}'                       # FX asset scene name
+fileNameHDA =       fileTypes['HDA'] + '_{0}_{1}.{2}'                      # HDA file name
 
 filePathAnimation =       '{0}/scenes/ANIMATION/{1}/SHOT_{2}/{3}'          # Animation scene path
 filePathRender =          '{0}/scenes/RENDER/{1}/SHOT_{2}/{3}'             # Render scene path
@@ -87,6 +90,7 @@ filePathChar =            '{0}/scenes/ASSETS/CHARACTERS/{1}/{2}/{3}'       # Cha
 filePathEnv =             '{0}/scenes/ASSETS/ENVIRONMENTS/{1}/{2}'         # Environment asset scene path
 filePathProp =            '{0}/scenes/ASSETS/PROPS/{1}/{2}'                # Prop asset scene path
 filePathFX =              '{0}/scenes/FX/ASSETS/ENVIRONMENTS/{1}/{2}'      # FX asset scene path. WIP! need solve sorting
+filePathHDA =             '{0}/hda/{1}/{2}/{3}/{4}'                         # HDA path.
 
 
 
@@ -95,6 +99,8 @@ filePathFX =              '{0}/scenes/FX/ASSETS/ENVIRONMENTS/{1}/{2}'      # FX 
 # Another option is to use custom UID (node.setUserData()) for each node and save it in database. Potentially TBD.
 
 # Get Houdini root nodes
+
+
 sceneRoot = hou.node('/obj/')
 outRoot = hou.node('/out/')
 # Distance between nodes in scene view
@@ -335,7 +341,7 @@ def buildPathLatestVersion(filePath):
 
     return filePathLatestVersion
 
-def buildFilePath(version, fileType, scenePath=None, assetName=None, sequenceNumber=None, shotNumber=None):
+def buildFilePath(version, fileType, scenePath=None, assetName=None, sequenceNumber=None, shotNumber=None, assetType=None):
     '''
     Generate and return a full path to a file <filePath> (string).
 
@@ -357,6 +363,12 @@ def buildFilePath(version, fileType, scenePath=None, assetName=None, sequenceNum
         filePathData = analyzeFliePath(scenePath)
         sequenceNumber = filePathData['sequenceNumber']
         shotNumber = filePathData['shotNumber']
+
+    # HDA. ENV
+    if fileType == fileTypes['HDA']:
+        fileName = fileNameHDA.format(assetName, version, extensionHDA)
+        if assetType == 'environment':
+            filePath = filePathHDA.format(root3D, 'ASSETS', 'ENVIRONMENTS', assetName, fileName)
 
     # ASSET scenes. CHARACTER
     if fileType == fileTypes['character']:
@@ -670,17 +682,44 @@ def setCameraParameters(camera):
     camera.parm('resx').set(resolution_HR[0])
     camera.parm('resy').set(resolution_HR[1])
 
-def createHDA(parent, hdaTypeName, hdaName):
+def exportHDA(assetType, hdaName, hdaLabel):
     '''
-    Create Houdini digital asset node in scene and set latest file version
+    Create Houdini Digital Asset: create empty subnet, convert to HDA
 
-    :param hdaTypeName:
-    :param hdaName:
+    TODO: Need to implement SNV !!!!
+    '''
+
+    # Build HDA file path
+
+    filePathHDA = buildFilePath('001', fileTypes['HDA'], assetName=hdaName, assetType=assetType)
+
+    # Create subnetwork container
+    subnet = sceneRoot.createNode("subnet", hdaLabel)
+
+    # Create HDA from subnetwork
+    hda = subnet.createDigitalAsset(
+        name=hdaName,
+        hda_file_name=filePathHDA,
+        description=hdaLabel)
+
+    # Update and save HDA
+    # hdaDefinition = hda.type().definition()
+    # hdaOptions = hdaDefinition.options()
+    # hdaOptions.setSaveInitialParmsAndContents(True)
+    # hdaDefinition.setOptions(hdaOptions)
+    # hdaDefinition.save(hdaDefinition.libraryFilePath(), hda, hdaOptions)
+
+def importHDA(parent, hdaName, hdaLabel):
+    '''
+    Create Houdini Digital Asset node in the scene and set latest file version
+
+    :param hdaName: Name of HDA node (node type name)
+    :param hdaLabel: label of HDA node (name shown in Node Editor)
     :return:
     '''
 
     # Create HDA node inside parent container
-    hda = parent.createNode(hdaTypeName, hdaName)
+    hda = parent.createNode(hdaName, hdaLabel)
 
     # Set HDA file version (latest)
     hdaDefinitions = hda.type().allInstalledDefinitions()
@@ -757,7 +796,7 @@ def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAsse
 
     # [Environment] + [Render objects]
     if environmentData:
-        ENV = createHDA(sceneRoot, environmentData['hda_name'], environmentData['code'])
+        ENV = importHDA(sceneRoot, environmentData['hda_name'], environmentData['code'])
         ENV.setPosition([nodeDistance_x, 0])
 
         # Add Material lib HDA
@@ -841,7 +880,7 @@ def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, ca
         if not os.path.exists(pathScene):
             # Create FOLDER for HIP
             sceneLocation = analyzeFliePath(pathScene)['fileLocation']
-            if not os.path.exists(pathScene):
+            if not os.path.exists(sceneLocation):
                 os.makedirs(sceneLocation)
             # Save first version if NOT EXISTS
             hou.hipFile.save(pathScene)

@@ -777,10 +777,19 @@ class ProjectManager(QtWidgets.QWidget):
         for asset in assets:
             assetName = asset.text()
 
+            print '>> Creating {} asset scene...'.format(assetName)
+
             # Get asset data
             assetData = dna.getAssetDataByName(genesAssets, assetName)
+            assetType = assetData['sg_asset_type']
             # Create HIP file
-            dna.createHip(dna.fileTypes[assetData['sg_asset_type']], assetName=assetName)
+            dna.createHip(dna.fileTypes[assetType], assetName=assetName)
+
+            # Create asset HDA
+            # WARNING. This function will overwrite existing HDA
+            dna.exportHDA(assetType, assetName, assetName)
+
+            print '>> Asset scene created!'
 
     def openAssetHip(self):
         '''
