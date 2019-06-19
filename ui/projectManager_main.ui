@@ -249,23 +249,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QSplitter" name="splitter_5">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <widget class="QPushButton" name="btn_shotHipRNDCreate">
-         <property name="text">
-          <string>Create Render Hip</string>
-         </property>
-        </widget>
-        <widget class="QPushButton" name="btn_shotHipRNDOpen">
-         <property name="text">
-          <string>Open Render Hip</string>
-         </property>
-        </widget>
-       </widget>
-      </item>
-      <item>
        <widget class="QSplitter" name="splitter_6">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -278,6 +261,23 @@
         <widget class="QPushButton" name="btn_shotHipANMOpen">
          <property name="text">
           <string>Open Anim Hip</string>
+         </property>
+        </widget>
+       </widget>
+      </item>
+      <item>
+       <widget class="QSplitter" name="splitter_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <widget class="QPushButton" name="btn_shotHipRNDCreate">
+         <property name="text">
+          <string>Create Render Hip</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="btn_shotHipRNDOpen">
+         <property name="text">
+          <string>Open Render Hip</string>
          </property>
         </widget>
        </widget>

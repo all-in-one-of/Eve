@@ -18,7 +18,6 @@ import glob
 import hou
 from PySide2 import QtCore, QtUiTools, QtWidgets
 
-#import utils
 
 # DEFINE COMMON VARIABLES AND PATHS
 # Pipeline items
@@ -112,7 +111,7 @@ cameraName = 'E{0}_S{1}'
 # File Cache SOP name for characters
 fileCacheName = 'CACHE_{}'
 # Mantra node
-mantra = 'RENDER'
+mantraName = 'RENDER'
 
 # SETTINGS
 renderSettings = {
@@ -464,8 +463,8 @@ def buildRenderSequencePath(scenePath=None):
             renderSequence = buildFilePath(nextVersion, fileTypes['renderSequence'], scenePath=scenePath)
             os.makedirs(analyzeFliePath(renderSequence)['fileLocation'])
 
-        # Localize path (add $JOB)
-        renderSequence = renderSequence.replace(root3D, '$JOB')
+    # Localize path (add $JOB)
+    renderSequence = renderSequence.replace(root3D, '$JOB')
 
     return renderSequence
 
@@ -598,7 +597,7 @@ def getAssetDataByType(assetsData, assetType):
                 listEnvironments.append(assetData)
         return listEnvironments
 
-    if assetType == 'Character':
+    if assetType == 'character':
         listCharacters = []
         for assetData in assetsData:
             if assetData['sg_asset_type'] == assetType:
@@ -635,7 +634,7 @@ def getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
            'code': 'SHOT_010', 'sg_cut_out': 200,
            'assets': [{'name': 'CITY'}, {'name': 'ROMA'}]}
 
-    environmentData = {
+    environmentsData = {
            'code': 'CITY',
            'sg_asset_type': 'Environment'
            'hda_name': 'city',
@@ -660,14 +659,14 @@ def getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets):
 
     if shotData:
         assetsData = getAssetsDataByShot(shotData, genesAssets)
-        environmentData = getAssetDataByType(assetsData, 'environment')
-        charactersData = getAssetDataByType(assetsData, 'Character')
-        fxData = getAssetDataByType(assetsData, 'FX')
+        environmentsData = getAssetDataByType(assetsData, 'environment')
+        charactersData = getAssetDataByType(assetsData, 'character')
+        fxsData = getAssetDataByType(assetsData, 'FX')
 
         shotGene['shotData'] = shotData
-        shotGene['environmentData'] = environmentData
+        shotGene['environmentsData'] = environmentsData
         shotGene['charactersData'] = charactersData
-        shotGene['fxData'] = fxData
+        shotGene['fxsData'] = fxsData
 
         return shotGene
 
@@ -811,74 +810,82 @@ def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAsse
 
     # Expand shot data
     shotGene = getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets)
-    environmentData = shotGene['environmentData']
-    characterData = shotGene['charactersData']
-    fxData = shotGene['fxData']
+    environmentsData = shotGene['environmentsData']
+    charactersData = shotGene['charactersData']
+    fxsData = shotGene['fxsData']
     frameEnd = shotGene['shotData']['sg_cut_out']
+
+    # Debug
+    # print 'shotGene = ', shotGene
+    # print 'charactersData = ', charactersData
 
     # Initialize scene
     scenePath = hou.hipFile.path()
 
 
-    # SETUP SCENE generall
+    # SETUP SCENE general
     hou.playbar.setFrameRange(frameStart, int(frameEnd))
     hou.playbar.setPlaybackRange(frameStart, int(frameEnd))
 
-    """
+
     # [Environment] + [Render objects]
-    if environmentData:
-        ENV = importHDA(sceneRoot, environmentData['hda_name'], environmentData['code'])
-        ENV.setPosition([nodeDistance_x, 0])
+    if environmentsData:
+        for envData in environmentsData:
+            environment = importHDA(sceneRoot, envData['hda_name'], envData['code'])
+            environment.setPosition([nodeDistance_x, 0])
 
-        # Add Material lib HDA
-        # mat_data = environmentData['materials']
-        # ML = sceneRoot.createNode(mat_data['hda_name'], mat_data['name'])
-        # ML.setPosition([0, 0])
-        # Add lights HDA
-        # lit_data = environmentData['lights']
-        # LIT = sceneRoot.createNode(lit_data['hda_name'], lit_data['name'])
-        # LIT.setPosition([0, -nodeDistance_y])
-
+            # Add Material lib HDA
+            # mat_data = envData['materials']
+            # ML = sceneRoot.createNode(mat_data['hda_name'], mat_data['name'])
+            # ML.setPosition([0, 0])
+            # Add lights HDA
+            # lit_data = envData['lights']
+            # LIT = sceneRoot.createNode(lit_data['hda_name'], lit_data['name'])
+            # LIT.setPosition([0, -nodeDistance_y])
 
     # [Characters]
-    if characterData:
-        for n, character in enumerate(characterData):
-            CHAR = dna.createContainer(sceneRoot, characterData[n]['code'], mb=1)
-            CHAR.setPosition([2*dna.nodeDistance_x, n*dna.nodeDistance_y])
+    if charactersData:
+        for n, charData in enumerate(charactersData):
+            character = createContainer(sceneRoot, charData['code'], mb=1)
+            character.setPosition([2*nodeDistance_x, n*nodeDistance_y])
 
     # [FX]
-    if fxData:
-        for n, FX in enumerate(fxData):
-            FX = sceneRoot.createNode(FX['hda_name'], FX['code'])
-            FX.setPosition([3*dna.nodeDistance_x, n*dna.nodeDistance_y])
+    if fxsData:
+        for n, fxData in enumerate(fxsData):
+            FX = sceneRoot.createNode(fxData['hda_name'], fxData['code'])
+            FX.setPosition([3*nodeDistance_x, n*nodeDistance_y])
 
-    # Setup Render scene
-    if fileType == dna.fileTypes['renderScene']:
+    # Setup RENDER scene
+    if fileType == fileTypes['renderScene']:
         # SETUP MANTRA OUTPUT
         # Create mantra render node
-        mantra = outRoot.createNode('ifd', dna.mantra)
+        mantra = outRoot.createNode('ifd', mantraName)
 
         # Render sequence setup
-        renderSequence = dna.buildRenderSequencePath(scenePath)
+        renderSequence = buildRenderSequencePath(scenePath)
 
         # Setup Mantra parameters
         mantra.parm('vm_picture').set(renderSequence)
-        cameraName = dna.cameraName.format(sequenceNumber, shotNumber)
-        mantra.parm('camera').set('/obj/{}'.format(cameraName))
+        mantra.parm('camera').set('/obj/{}'.format(cameraName.format(sequenceNumber, shotNumber)))
         # Set common parameters from preset
-        for param, value in dna.renderSettings['common'].iteritems():
+        for param, value in renderSettings['common'].iteritems():
             mantra.parm(param).set(value)
         # Set DRAFT parameters
-        for param, value in dna.renderSettings['draft'].iteritems():
+        for param, value in renderSettings['draft'].iteritems():
             mantra.parm(param).set(value)
 
-    # Setup Animation Scene
-    if fileType == dna.fileTypes['animationScene']:
+
+
+    # Setup ANIMATION Scene
+    if fileType == fileTypes['animationScene']:
         # Create Camera
-        CAM = sceneRoot.createNode('cam', 'E{0}_S{1}'.format(sequenceNumber, shotNumber))
-        CAM.setPosition([0, -dna.nodeDistance_y*2])
-        dna.setCameraParameters(CAM)
-    """
+        camera = sceneRoot.createNode('cam', cameraName.format(sequenceNumber, shotNumber))
+        camera.setPosition([0, -nodeDistance_y*2])
+        setCameraParameters(camera)
+
+    # Save HIP file
+    hou.hipFile.save()
+
     print '>> Building scene content done!'
 
 def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None):
@@ -931,7 +938,6 @@ def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None):
     print '>> Saving {} hip file done!'.format(fileType)
     return True
 
-
 # FILES MANIPULATIONS
 def createFolder(filePath):
     '''
@@ -972,47 +978,6 @@ def versionSolver(filePath):
             return None
 
 # UI
-class SNV_rem(QtWidgets.QDialog):
-    def __init__(self, fileType, sequenceNumber, shotNumber, assetName, pathScene):
-        # Setup UI
-        super(SNV, self).__init__()
-        self.fileType = fileType # RND, ANM etc. To return back to CS object
-        self.sequenceNumber = sequenceNumber
-        self.shotNumber = shotNumber
-        self.assetName = assetName
-        ui_file = '{}/saveNextVersion_Warning.ui'.format(folderUI)
-        self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
-
-        # Setup label
-        message = 'File exists!\n{}'.format(analyzeFliePath(pathScene)['fileName'])
-        self.ui.lab_message.setText(message)
-
-        # Setup window properties
-        mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.setContentsMargins(0, 0, 0, 0)
-        mainLayout.addWidget(self.ui)
-        self.setLayout(mainLayout)
-        self.resize(320, 60)  # resize window
-        self.setWindowTitle('Create Sequences')  # Title Main window
-        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
-
-        # Setup buttons
-        self.ui.btn_SNV.clicked.connect(self.SNV)
-        self.ui.btn_SNV.clicked.connect(self.close)
-        self.ui.btn_OVR.clicked.connect(self.OVR)
-        self.ui.btn_OVR.clicked.connect(self.close)
-        self.ui.btn_OVR.clicked.connect(self.close)
-        self.ui.btn_ESC.clicked.connect(self.close)
-
-
-    def SNV(self):
-        createHip(self.fileType, self.sequenceNumber, self.shotNumber, self.assetName, catch='SNV')
-        self.done(256) # return value to createHip() winSNV.exec_()
-
-    def OVR(self):
-        createHip(self.fileType, self.sequenceNumber, self.shotNumber, self.assetName, catch='OVR')
-        self.done(256) # return value to createHip() winSNV.exec_()
-
 class VersionSolver(QtWidgets.QDialog):
     def __init__(self, filePath):
         # Setup UI

@@ -9,7 +9,6 @@
     <memberTool name="project_manager"/>
     <memberTool name="snv"/>
     <memberTool name="create Flipbook"/>
-    <memberTool name="createScene"/>
     <memberTool name="scene_manager"/>
     <memberTool name="export animation data"/>
     <memberTool name="importANM"/>
@@ -27,16 +26,6 @@ importANM.run()
     <script scriptType="python"><![CDATA[import saveNextVersion
 reload(saveNextVersion)
 saveNextVersion.run()]]></script>
-  </tool>
-
-  <tool name="createScene" label="Create Scene" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[import createScene
-reload(createScene)
-createScene.run()
-    
-#if kwargs["ctrlclick"] != True:
-#createScene.run()
-]]></script>
   </tool>
 
   <tool name="create Flipbook" label="FlipB" icon="PLASMA_App">
@@ -66,7 +55,7 @@ projectManager.run()
 #createScene.run()]]></script>
   </tool>
 
-  <tool name="scene_manager" label="Edit Scene" icon="PLASMA_App">
+  <tool name="scene_manager" label="Scene M" icon="PLASMA_App">
     <script scriptType="python"><![CDATA[import sceneManager
 reload(sceneManager)
 sceneManager.run()]]></script>
