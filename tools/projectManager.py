@@ -6,6 +6,7 @@ Create and manage assets and shots in project
 # TODO: split list of asset to categories: char, env, prop, fx
 # TODO: When delete sequence ask to delete all sequence shots ??
 # (del sequence 020 (which has shot 010), create seq 020, try to create shot 010- error- exists)
+# TODO: Hide FX Type combo box when not dealing with FX assets
 
 import hou
 import json
@@ -333,6 +334,7 @@ class CreateAssset(QtWidgets.QWidget):
         self.ui_asset = QtUiTools.QUiLoader().load(ui_asset, parentWidget=self)
         self.ui.assetLayout.addWidget(self.ui_asset)
         self.ui_asset.com_assetType.addItems(dna.assetTypes)
+        self.ui_asset.com_fxType.addItems(dna.fxTypes)
 
 
         self.ui.btn_add.clicked.connect(self.addAsset)
@@ -380,11 +382,17 @@ class ProjectManager(QtWidgets.QWidget):
         self.butAssetsStat(False)
         self.butShotsStat(False)
 
+        # !!!!!!!!!!!!
+        # Hide LIBRARY
+        self.ui.box_lib.hide()
+        self.ui.box_libProperties.hide()
+
         # Asset UI
         ui_asset = "{}/projectManager_asset.ui".format(dna.folderUI)
         self.ui_asset = QtUiTools.QUiLoader().load(ui_asset, parentWidget=self)
         self.ui.assetLayout.addWidget(self.ui_asset)
         self.ui_asset.com_assetType.addItems(dna.assetTypes)
+        self.ui_asset.com_fxType.addItems(dna.fxTypes)
         self.ui_asset.hide()
 
         # Shot UI
@@ -782,11 +790,24 @@ class ProjectManager(QtWidgets.QWidget):
             # Get asset data
             assetData = dna.getAssetDataByName(genesAssets, assetName)
             assetType = assetData['sg_asset_type']
-            # Create HIP file
-            if dna.createHip(dna.fileTypes[assetType], assetName=assetName):
-                # Create asset HDA
-                # WARNING. This function will overwrite existing HDA
-                dna.exportHDA(assetType, assetName, assetName)
+            fileType = dna.fileTypes[assetType]
+
+            # Create HIP file with content
+            if dna.createHip(fileType, assetName=assetName):
+
+                # CHARACTER
+                if fileType == dna.fileTypes['character']:
+                    pass
+
+                # ENVIRONMENT
+                elif fileType == dna.fileTypes['environment']:
+                    # Create ENV asset HDA
+                    dna.exportHDA(assetType, assetName, assetName)
+
+                # FX
+                elif fileType == dna.fileTypes['FX']:
+                    # Create ENV asset HDA
+                    dna.exportHDA(assetType, assetName, assetName)
 
                 print '>> Asset scene created!'
 

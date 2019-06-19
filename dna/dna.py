@@ -9,9 +9,9 @@ we will consider LATEST version of file published (which needs to be used).
 '''
 
 # TODO: modify STATIC assets handling: move them to LIBRARY
-# TODO: Solve sorting of FX assets scenes(ASSETS(CHAR, ENV, PROP), SHOTS) in PATTERNS
-# TODO: Solve sorting of CHARACTER assets scenes (GEO, RIG, FUR) in PATTERNS
-
+# TODO: Solve sorting of FX assets scenes(ASSETS(CHAR, ENV, PROP), SHOTS) in PATTERNS ()
+# TODO: Solve sorting of CHARACTER assets scenes (GEO, RIG, FUR) in PATTERNS. (rise window and ask the type)
+# TODO: optimize buildFilePath with PATTERNS
 import os
 import json
 import glob
@@ -30,6 +30,7 @@ extensionFlipbook = 'jpg'
 extensionCacheAnim = 'bgeo.sc'
 extensionCamera = extensionHoudini
 
+versionSolverState = None
 
 # FILE TYPES dictionary. Used for:
 #   - define file name prefixes in file name patterns
@@ -48,6 +49,8 @@ fileTypes = {'animationScene': 'ANM',
 
 # Asset types
 assetTypes = ['character', 'environment', 'prop', 'FX']
+# FX types
+fxTypes = ['asset', 'shot']
 
 # Common variables
 frameStart = 1
@@ -86,11 +89,11 @@ filePathRender =          '{0}/scenes/RENDER/{1}/SHOT_{2}/{3}'             # Ren
 filePathSequenceRender =  '{0}/render/{1}/SHOT_{2}/{3}/{4}'                # Render sequence path
 filePathSequenceCache =   '$JOB/geo/SHOTS/{0}/SHOT_{1}/{2}/GEO/{3}/{4}'    # Characters geometry cache path
 filePathCamera =          '{0}/geo/SHOTS/{1}/SHOT_{2}/CAM/{3}'             # Camera ANM >> RND path
-filePathChar =            '{0}/scenes/ASSETS/CHARACTERS/{1}/{2}/{3}'       # Character asset scene path
+filePathChar =            '{0}/scenes/ASSETS/CHARACTERS/{1}/{2}/{3}'       # Char asset scene path. Need solve sorting!!
 filePathEnv =             '{0}/scenes/ASSETS/ENVIRONMENTS/{1}/{2}'         # Environment asset scene path
 filePathProp =            '{0}/scenes/ASSETS/PROPS/{1}/{2}'                # Prop asset scene path
-filePathFX =              '{0}/scenes/FX/ASSETS/ENVIRONMENTS/{1}/{2}'      # FX asset scene path. WIP! need solve sorting
-filePathHDA =             '{0}/hda/{1}/{2}/{3}/{4}'                         # HDA path.
+filePathFX =              '{0}/scenes/FX/ASSETS/ENVIRONMENTS/{1}/{2}'      # FX asset scene path. Need solve sorting!!!
+filePathHDA =             '{0}/hda/{1}/{2}/{3}/{4}'                        # HDA path.
 
 
 
@@ -99,8 +102,6 @@ filePathHDA =             '{0}/hda/{1}/{2}/{3}/{4}'                         # HD
 # Another option is to use custom UID (node.setUserData()) for each node and save it in database. Potentially TBD.
 
 # Get Houdini root nodes
-
-
 sceneRoot = hou.node('/obj/')
 outRoot = hou.node('/out/')
 # Distance between nodes in scene view
@@ -364,11 +365,14 @@ def buildFilePath(version, fileType, scenePath=None, assetName=None, sequenceNum
         sequenceNumber = filePathData['sequenceNumber']
         shotNumber = filePathData['shotNumber']
 
-    # HDA. ENV
+    # HDA. ENV, FX, ...
     if fileType == fileTypes['HDA']:
         fileName = fileNameHDA.format(assetName, version, extensionHDA)
+
         if assetType == 'environment':
             filePath = filePathHDA.format(root3D, 'ASSETS', 'ENVIRONMENTS', assetName, fileName)
+        if assetType == 'FX':
+            filePath = filePathHDA.format(root3D, 'FX/ASSETS', 'ENVIRONMENTS', assetName, fileName)
 
     # ASSET scenes. CHARACTER
     if fileType == fileTypes['character']:
@@ -379,6 +383,11 @@ def buildFilePath(version, fileType, scenePath=None, assetName=None, sequenceNum
     if fileType == fileTypes['environment']:
         fileName = fileNameEnv.format(assetName, version, extensionHoudini)
         filePath = filePathEnv.format(root3D, assetName, fileName)
+
+    # ASSET scenes. FX
+    if fileType == fileTypes['FX']:
+        fileName = fileNameFX.format(assetName, version, extensionHoudini)
+        filePath = filePathFX.format(root3D, assetName, fileName)
 
     # RENDER scene path
     if fileType == fileTypes['renderScene']:
@@ -391,7 +400,7 @@ def buildFilePath(version, fileType, scenePath=None, assetName=None, sequenceNum
         filePath = filePathAnimation.format(root3D, sequenceNumber, shotNumber, fileName)
 
     # FLIPBOOK or MANTRA render sequence path
-    elif fileType == fileTypes['flipbookSequence'] or fileType == fileTypes['renderSequence']:
+    if fileType == fileTypes['flipbookSequence'] or fileType == fileTypes['renderSequence']:
         # Set file extension for RENDER or FLIPBOOK
         if fileType == fileTypes['flipbookSequence']:
             extension = extensionFlipbook
@@ -402,12 +411,12 @@ def buildFilePath(version, fileType, scenePath=None, assetName=None, sequenceNum
         filePath = filePathSequenceRender.format(root3D, sequenceNumber, shotNumber, version, fileName)
 
     # Character animation CACHE path
-    elif fileType == fileTypes['cacheAnim']:
+    if fileType == fileTypes['cacheAnim']:
         fileName = fileNameSequence.format(sequenceNumber, shotNumber, version, extensionCacheAnim)
         filePath = filePathSequenceCache.format(sequenceNumber, shotNumber, assetName, version, fileName)
 
     # CAMERA file ANM scene >> RND scene
-    elif fileType == fileTypes['cacheCamera']:
+    if fileType == fileTypes['cacheCamera']:
         fileName = fileNameCamera.format(sequenceNumber, shotNumber, version, extensionCamera)
         filePath = filePathCamera.format(root3D, sequenceNumber, shotNumber, fileName)
 
@@ -690,8 +699,29 @@ def exportHDA(assetType, hdaName, hdaLabel):
     '''
 
     # Build HDA file path
-
     filePathHDA = buildFilePath('001', fileTypes['HDA'], assetName=hdaName, assetType=assetType)
+
+    # Check if file exist, decide what version to save.
+    global versionSolverState
+    versionSolverState = None
+    state = versionSolver(filePathHDA)
+
+    if state == 'SNV':
+        # If exists and user choose save next version
+        filePathHDA = buildPathNextVersion(buildPathLatestVersion(filePathHDA))
+    elif state == 'OVR':
+        # If exists and user choose overwrite latest existing version
+        filePathHDA = buildPathLatestVersion(filePathHDA)
+    else:
+        if state:
+            # File does not exists, save it as is.
+            filePathHDA = state
+            # Create FOLDER for HIP
+            createFolder(filePathHDA)
+        else:
+            # User cancel action
+            print '>> Canceled!'
+            return
 
     # Create subnetwork container
     subnet = sceneRoot.createNode("subnet", hdaLabel)
@@ -851,7 +881,7 @@ def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAsse
     """
     print '>> Building scene content done!'
 
-def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, catch=None): # pathScene=None
+def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None):
     '''
     Create asset/shot Houdini scene.
 
@@ -862,124 +892,47 @@ def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, ca
     '''
 
     print '>> Saving {} hip file...'.format(fileType)
-    """
+
+    # Start new Houdini session without saving current
+    hou.hipFile.clear(suppress_save_prompt=True)
+
     # Build path to 001 version
-    if catch==None:
-        # SHOTS scenes
-        if fileType == fileTypes['animationScene'] or fileType == fileTypes['renderScene']:
-            pathScene = buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
-        # ASSETS scenes
-        else:
-            pathScene = buildFilePath('001', fileType, assetName=assetName)
-
-    if snv(pathScene, 'createHip', catch):
-        print 'A'
+    # SHOTS scenes
+    if fileType == fileTypes['animationScene'] or fileType == fileTypes['renderScene']:
+        pathScene = buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
+    # ASSETS scenes
     else:
-        print B''
-    """
+        pathScene = buildFilePath('001', fileType, assetName=assetName)
 
+    # Check if file exist, decide what version to save.
+    global versionSolverState
+    versionSolverState = None
+    state = versionSolver(pathScene)
 
-    # First time run
-    if catch == None:
-        # Build path to 001 version
-        # SHOTS scenes
-        if fileType == fileTypes['animationScene'] or fileType == fileTypes['renderScene']:
-            pathScene = buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber)
-        # ASSETS scenes
-        else:
-            pathScene = buildFilePath('001', fileType, assetName=assetName)
-
-        # Start new Houdini session without saving current
-        hou.hipFile.clear(suppress_save_prompt=True)
-
-        # Check if file exists
-        if not os.path.exists(pathScene):
+    if state == 'SNV':
+        # If exists and user choose save next version
+        pathScene = buildPathNextVersion(buildPathLatestVersion(pathScene))
+    elif state == 'OVR':
+        # If exists and user choose overwrite latest existing version
+        pathScene = buildPathLatestVersion(pathScene)
+    else:
+        if state:
+            # File does not exists, save it as is.
+            pathScene = state
             # Create FOLDER for HIP
-            sceneLocation = analyzeFliePath(pathScene)['fileLocation']
-            if not os.path.exists(sceneLocation):
-                os.makedirs(sceneLocation)
-            # Save first version if NOT EXISTS
-            hou.hipFile.save(pathScene)
-            print '>> Hip created: {}'.format(pathScene.split('/')[-1])
-            return True
+            createFolder(pathScene)
         else:
-            # If 001 version exists, get latest existing version
-            pathScene = buildPathLatestVersion(pathScene)
-            # Run Save Next Version dialog if EXISTS
-            winSNV = SNV(fileType, sequenceNumber, shotNumber, assetName, pathScene)
-            if winSNV.exec_():
-                return True
-            else:
-                return False
+            # User cancel action
+            print '>> Canceled!'
+            return
 
-    # Run from SNV class: return user choice = SAVE NEXT VERSION
-    elif catch == 'SNV':
-        # Save latest version
-        pathScene = buildPathNextVersion(buildPathLatestVersion(
-            buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber, assetName=assetName)))
-        hou.hipFile.save(pathScene)
-        print '>> Hip saved with a latest version: {}'.format(pathScene.split('/')[-1])
-
-    # Run from SNV class: return user choice = OVERWRITE
-    elif catch == 'OVR':
-        # Overwrite existing file
-        pathScene = buildPathLatestVersion(
-            buildFilePath('001', fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber, assetName=assetName))
-        hou.hipFile.save(pathScene)
-        print '>> Hip overwrited: {}'.format(pathScene.split('/')[-1])
-
-    # Save current scene
-    hou.hipFile.save()
+    hou.hipFile.save(pathScene)
 
     print '>> Saving {} hip file done!'.format(fileType)
+    return True
 
 
-def snv(filePath, parentName, catch=None):
-
-    # First time run
-    if catch == None:
-        # Start new Houdini session without saving current
-        hou.hipFile.clear(suppress_save_prompt=True)
-
-        # Check if file exists
-        if not os.path.exists(filePath):
-            # Create FOLDER for HIP
-            fileLocation = analyzeFliePath(filePath)['fileLocation']
-            if not os.path.exists(fileLocation):
-                os.makedirs(fileLocation)
-            # Save first version if NOT EXISTS
-            hou.hipFile.save(filePath)
-            print '>> Hip created: {}'.format(filePath.split('/')[-1])
-            return True
-        else:
-            # If 001 version exists, get latest existing version
-            filePath = buildPathLatestVersion(filePath)
-            # Run Save Next Version dialog if EXISTS
-            winSNV = SNV2(filePath, parentName) # fileType, sequenceNumber, shotNumber, assetName,
-            if winSNV.exec_():
-                return True
-            else:
-                return False
-
-    # Run from SNV class: return user choice = SAVE NEXT VERSION
-    elif catch == 'SNV':
-        # Save latest version
-        filePath = buildPathNextVersion(buildPathLatestVersion(filePath))
-        hou.hipFile.save(filePath)
-        print '>> Hip saved with a latest version: {}'.format(filePath.split('/')[-1])
-
-    # Run from SNV class: return user choice = OVERWRITE
-    elif catch == 'OVR':
-        # Overwrite existing file
-        filePath = buildPathLatestVersion(filePath)
-        hou.hipFile.save(filePath)
-        print '>> Hip overwrited: {}'.format(filePath.split('/')[-1])
-
-    # Save current scene
-    hou.hipFile.save()
-
-
-# UNSORTED
+# FILES MANIPULATIONS
 def createFolder(filePath):
     '''
     Create folder for a FILE if not exists
@@ -993,8 +946,33 @@ def createFolder(filePath):
     if not os.path.exists(fileLocation):
         os.makedirs(fileLocation)
 
+def versionSolver(filePath):
+    '''
+    Check if provided file path exists.
+        If not - return the same path.
+        If exists - ask user save next version or overwrite. Return new path based on user decision
+    :param filePath: string, file path to check
+    :return: path based on user decision or None if user cancel
+    '''
+
+    global versionSolverState
+
+    if not os.path.exists(filePath):
+        return filePath
+    else:
+        # If 001 version exists, get latest existing version
+        filePath = buildPathLatestVersion(filePath)
+        # Run Save Next Version dialog
+        VS = VersionSolver(filePath)
+        if VS.exec_():
+            # print 'versionSolverState 01 = {}'.format(versionSolverState)
+            return versionSolverState
+        else:
+            # print 'versionSolverState 02 = {}'.format(versionSolverState)
+            return None
+
 # UI
-class SNV(QtWidgets.QDialog):
+class SNV_rem(QtWidgets.QDialog):
     def __init__(self, fileType, sequenceNumber, shotNumber, assetName, pathScene):
         # Setup UI
         super(SNV, self).__init__()
@@ -1035,18 +1013,25 @@ class SNV(QtWidgets.QDialog):
         createHip(self.fileType, self.sequenceNumber, self.shotNumber, self.assetName, catch='OVR')
         self.done(256) # return value to createHip() winSNV.exec_()
 
-class SNV2(QtWidgets.QDialog):
-    def __init__(self, filePath, parentName):
+class VersionSolver(QtWidgets.QDialog):
+    def __init__(self, filePath):
         # Setup UI
-        super(SNV2, self).__init__()
+        super(VersionSolver, self).__init__()
+
+        # Setup window properties
         self.filePath = filePath
-        self.parentName = parentName # Name of the function from which SNV was launched
         ui_file = '{}/saveNextVersion_Warning.ui'.format(folderUI)
         self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
-        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
-        # Setup label
         message = 'File exists!\n{}'.format(analyzeFliePath(self.filePath )['fileName'])
         self.ui.lab_message.setText(message)
+
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.addWidget(self.ui)
+        self.setLayout(mainLayout)
+        self.resize(400, 60)  # resize window
+        self.setWindowTitle('Warning')  # Title Main window
+        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         # Setup buttons
         self.ui.btn_SNV.clicked.connect(self.SNV)
@@ -1057,10 +1042,12 @@ class SNV2(QtWidgets.QDialog):
         self.ui.btn_ESC.clicked.connect(self.close)
 
     def SNV(self):
-        eval("{}(None, pathScene=self.filePath, catch='SNV')".format(self.parentName))
+        global versionSolverState
+        versionSolverState = 'SNV'
         self.done(256)  # return value to parentName function winSNV.exec_()
 
     def OVR(self):
-        eval("{}(None, pathScene=self.filePath, catch='OVR')".format(self.parentName))
+        global versionSolverState
+        versionSolverState = 'OVR'
         self.done(256)  # return value to parentName function winSNV.exec_()
 

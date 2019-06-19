@@ -286,7 +286,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_3">
+    <widget class="QGroupBox" name="box_lib">
      <property name="minimumSize">
       <size>
        <width>140</width>
@@ -316,7 +316,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="groupBox_4">
+    <widget class="QGroupBox" name="box_libProperties">
      <property name="minimumSize">
       <size>
        <width>300</width>

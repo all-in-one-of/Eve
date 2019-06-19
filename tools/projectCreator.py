@@ -6,6 +6,8 @@ Create folder structure for the project and copy pipeline files into it
 
 PySide Release.
 
+Removed STATIC assets category. Now those files would be in LIBRARY
+
 '''
 
 # Common modules import
@@ -46,8 +48,7 @@ SHOTS = [
 ASSETS = [
     ['CHARACTERS', []],
     ['ENVIRONMENTS', []],
-    ['PROPS', []],
-    ['STATIC', []]
+    ['PROPS', []]
         ]
 # Types structure
 TYPES = [
@@ -141,7 +142,7 @@ class Warning(QWidget):
         ProjectManager.createProject(self.parent, 'NO')
 
 # MAIN MODULE
-class ProjectManager(QWidget):
+class ProjectCreator(QWidget):
     '''
     Create Project MAIN MODULE
     Set project name and location in UI, create folder structure, copy pipeline files
@@ -152,7 +153,7 @@ class ProjectManager(QWidget):
     assets = {'CHARACTERS': [], 'ENVIRONMENTS': [], 'PROPS': [], 'STATIC':[]}
 
     def __init__(self):
-        super(ProjectManager, self).__init__()
+        super(ProjectCreator, self).__init__()
         # SETUP UI
         ui_file = QtCore.QFile(uiFile_main)
         ui_file.open(QtCore.QFile.ReadOnly)
@@ -296,11 +297,7 @@ class ProjectManager(QWidget):
         launcherBAT_DST.close()
 
         # Create genes
-        if self.chb_example.isChecked():
-            # Copy example genes
-            self.copyTree('{}/src/genes'.format(rootPipeline), '{}/PREP/PIPELINE/genes'.format(rootProject))
-        else:
-            # Create new clean genes
+        if not self.chb_example.isChecked():
             with open(genesFileAssets.format(rootProject), 'w') as f:
                 json.dump([], f)
             with open(genesFileShots.format(rootProject), 'w') as f:
@@ -308,9 +305,12 @@ class ProjectManager(QWidget):
             with open(genesFileSequences.format(rootProject), 'w') as f:
                 json.dump([], f)
 
-
         # Copy Houdini prefs
         self.copyTree('{}/src/settings'.format(rootPipeline), '{}/PREP/PIPELINE/settings'.format(rootProject))
+
+        # Copy Example Project
+        if self.chb_example.isChecked():
+            self.copyTree('{}/src/project'.format(rootPipeline), '{}'.format(rootProject))
 
         print '>> Folder structure with pipeline files created in {0}/'.format(rootProject)
 
@@ -353,6 +353,6 @@ class ProjectManager(QWidget):
 
 # Run Create Project script
 app = QApplication([])
-CP = ProjectManager()
-CP.window.show()
+PC = ProjectCreator()
+PC.window.show()
 app.exec_()
