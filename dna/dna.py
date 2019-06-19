@@ -777,7 +777,7 @@ def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAsse
     :return:
     '''
 
-    print '>> Building scene content...'
+    print '>> Building shot content...'#
 
     # Expand shot data
     shotGene = getShotGenes(sequenceNumber, shotNumber, genesShots, genesAssets)
@@ -791,9 +791,10 @@ def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAsse
 
 
     # SETUP SCENE generall
-    hou.playbar.setFrameRange(frameStart, frameEnd)
-    hou.playbar.setPlaybackRange(frameStart, frameEnd)
+    hou.playbar.setFrameRange(frameStart, int(frameEnd))
+    hou.playbar.setPlaybackRange(frameStart, int(frameEnd))
 
+    """
     # [Environment] + [Render objects]
     if environmentData:
         ENV = importHDA(sceneRoot, environmentData['hda_name'], environmentData['code'])
@@ -808,7 +809,7 @@ def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAsse
         # LIT = sceneRoot.createNode(lit_data['hda_name'], lit_data['name'])
         # LIT.setPosition([0, -nodeDistance_y])
 
-    """
+
     # [Characters]
     if characterData:
         for n, character in enumerate(characterData):
@@ -850,7 +851,7 @@ def buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAsse
     """
     print '>> Building scene content done!'
 
-def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, pathScene=None, catch=None):
+def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, catch=None): # pathScene=None
     '''
     Create asset/shot Houdini scene.
 
@@ -861,7 +862,7 @@ def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, pa
     '''
 
     print '>> Saving {} hip file...'.format(fileType)
-
+    """
     # Build path to 001 version
     if catch==None:
         # SHOTS scenes
@@ -875,8 +876,9 @@ def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, pa
         print 'A'
     else:
         print B''
-
     """
+
+
     # First time run
     if catch == None:
         # Build path to 001 version
@@ -930,7 +932,7 @@ def createHip(fileType, sequenceNumber=None, shotNumber=None, assetName=None, pa
     hou.hipFile.save()
 
     print '>> Saving {} hip file done!'.format(fileType)
-    """
+
 
 def snv(filePath, parentName, catch=None):
 
@@ -1002,10 +1004,19 @@ class SNV(QtWidgets.QDialog):
         self.assetName = assetName
         ui_file = '{}/saveNextVersion_Warning.ui'.format(folderUI)
         self.ui = QtUiTools.QUiLoader().load(ui_file, parentWidget=self)
-        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
+
         # Setup label
         message = 'File exists!\n{}'.format(analyzeFliePath(pathScene)['fileName'])
         self.ui.lab_message.setText(message)
+
+        # Setup window properties
+        mainLayout = QtWidgets.QVBoxLayout()
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.addWidget(self.ui)
+        self.setLayout(mainLayout)
+        self.resize(320, 60)  # resize window
+        self.setWindowTitle('Create Sequences')  # Title Main window
+        self.setParent(hou.ui.mainQtWindow(), QtCore.Qt.Window)
 
         # Setup buttons
         self.ui.btn_SNV.clicked.connect(self.SNV)

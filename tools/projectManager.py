@@ -783,13 +783,12 @@ class ProjectManager(QtWidgets.QWidget):
             assetData = dna.getAssetDataByName(genesAssets, assetName)
             assetType = assetData['sg_asset_type']
             # Create HIP file
-            dna.createHip(dna.fileTypes[assetType], assetName=assetName)
+            if dna.createHip(dna.fileTypes[assetType], assetName=assetName):
+                # Create asset HDA
+                # WARNING. This function will overwrite existing HDA
+                dna.exportHDA(assetType, assetName, assetName)
 
-            # Create asset HDA
-            # WARNING. This function will overwrite existing HDA
-            dna.exportHDA(assetType, assetName, assetName)
-
-            print '>> Asset scene created!'
+                print '>> Asset scene created!'
 
     def openAssetHip(self):
         '''
@@ -815,13 +814,15 @@ class ProjectManager(QtWidgets.QWidget):
         # Get E S from SHOT properties window
         sequenceNumber = self.ui_shot.com_shotSequence.currentText()
         shotNumber = self.ui_shot.lin_shotName.text()
+        print '>> Creating {0} E{1}_S{2} shot scene...'.format(fileType, sequenceNumber, shotNumber)
 
         # If shot exists in database run scene creation
         if not dna.checkGenes(sequenceNumber, shotNumber, genesShots):
             return
 
-        if dna.createHip(fileType, sequenceNumber, shotNumber):
+        if dna.createHip(fileType, sequenceNumber=sequenceNumber, shotNumber=shotNumber):
             dna.buildShotContent(fileType, sequenceNumber, shotNumber, genesShots, genesAssets)
+            print '>> Shot scene created!'
 
 
 # Create Tool instance
